@@ -2,6 +2,9 @@
 
 members = [
     "cli",
-    "core",
+    "rs-core",
+    "rs-core-derive",
+    "rs-macro",
+    "ffi",
     "shared"
 ]
