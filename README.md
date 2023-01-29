@@ -2,6 +2,10 @@
 rust practice workspace
 
 ```bash
+cargo build
+```
+
+```bash
 cargo test --all-features
 ```
 
