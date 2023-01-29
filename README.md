@@ -6,6 +6,10 @@ cargo build
 ```
 
 ```bash
+cargo build --release
+```
+
+```bash
 cargo test
 ```
 
