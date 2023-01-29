@@ -8,3 +8,7 @@ edition = "2021"
 [dependencies]
 rs-core = { path = "../rs-core", features = ['cache'] }
 rs-extra = { path = "../rs-extra", features = ["rs-macro"] }
+shared = { path = "../shared" }
+# derives
+hello_macro = { path = "../rs-derive/hello_macro" }
+heapsize = { path = "../rs-derive/heapsize" }

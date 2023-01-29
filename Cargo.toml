@@ -4,7 +4,7 @@ members = [
     "cli",
     "ffi",
     "rs-core",
-    "rs-core-derive",
+    "rs-derive/*",
     "rs-extra",
     "rs-macro",
     "shared"
