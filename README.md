@@ -16,3 +16,11 @@ cargo test
 ```bash
 cargo fmt --check
 ```
+
+```bash
+cargo clippy -- -D warnings
+```
+
+```bash
+cargo check
+```
