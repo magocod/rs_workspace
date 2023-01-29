@@ -6,10 +6,6 @@ cargo build
 ```
 
 ```bash
-cargo test --all-features
-```
-
-```bash
 cargo test
 ```
 
