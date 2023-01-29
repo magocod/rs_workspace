@@ -12,3 +12,10 @@ shared = { path = "../shared" }
 # derives
 hello_macro = { path = "../rs-derive/hello_macro" }
 heapsize = { path = "../rs-derive/heapsize" }
+
+[dev-dependencies]
+criterion = "0.4.0"
+
+[[bench]]
+name = "my_benchmark"
+harness = false

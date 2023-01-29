@@ -24,3 +24,7 @@ cargo clippy -- -D warnings
 ```bash
 cargo check
 ```
+
+```bash
+cargo bench --bench my_benchmark
+```
