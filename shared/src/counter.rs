@@ -9,6 +9,12 @@ impl Counter {
     }
 }
 
+impl Default for Counter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Iterator for Counter {
     type Item = u32;
 
