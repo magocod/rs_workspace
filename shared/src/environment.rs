@@ -20,10 +20,13 @@ impl TryFrom<String> for Environment {
         match s.to_lowercase().as_str() {
             "local" => Ok(Self::Local),
             "production" => Ok(Self::Production),
-            other => Err(format!(
-                "{} is not a supported environment. Use either `local` or `production`.",
-                other
-            )),
+            other => {
+                let e = format!(
+                    "{} is not a supported environment. Use either `local` or `production`.",
+                    other
+                );
+                Err(e)
+            },
         }
     }
 }
