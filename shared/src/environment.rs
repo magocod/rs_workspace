@@ -22,11 +22,10 @@ impl TryFrom<String> for Environment {
             "production" => Ok(Self::Production),
             other => {
                 let e = format!(
-                    "{} is not a supported environment. Use either `local` or `production`.",
-                    other
+                    "{other} is not a supported environment. Use either `local` or `production`.",
                 );
                 Err(e)
-            },
+            }
         }
     }
 }
