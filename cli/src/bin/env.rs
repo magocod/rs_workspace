@@ -3,7 +3,7 @@ use shared::environment::{Environment, MyEnum};
 fn main() {
     let v = Environment::Local.as_str();
 
-    println!("Environment to str {}", v);
+    println!("Environment to str {v}");
     println!("Environment to str {}", Environment::Production.as_str());
 
     let x = MyEnum::C as i32;

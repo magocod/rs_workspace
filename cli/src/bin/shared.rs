@@ -5,5 +5,5 @@ fn main() {
 
     let d = Dummy {};
 
-    println!("struct - {:?}", d);
+    println!("struct - {d:?}");
 }
