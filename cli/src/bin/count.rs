@@ -5,18 +5,18 @@ fn main() {
     let mut counter = Counter::new();
 
     // A
-    println!("{:?}", counter);
+    println!("{counter:?}");
     println!("next {:?}", counter.next());
     println!("next {:?}", counter.next());
     println!("next {:?}", counter.next());
     println!("next {:?}", counter.next());
     println!("next {:?}", counter.next());
     println!("next {:?}", counter.next());
-    println!("{:?}", counter);
+    println!("{counter:?}");
 
     // B
     let counter = Counter::new();
     for v in counter {
-        println!("next {:?}", v);
+        println!("next {v}");
     }
 }
