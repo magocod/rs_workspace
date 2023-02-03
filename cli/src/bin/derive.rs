@@ -27,12 +27,12 @@ fn main() {
 
     let d = Example {};
 
-    println!("struct - {:?}", d);
+    println!("struct - {d:?}");
     d.sample();
 
     let m = ExampleDerive {};
 
-    println!("struct - derive HelloMacro, - {:?}", m);
+    println!("struct - derive HelloMacro, - {m:?}");
     ExampleDerive::hello_macro();
     m.hello();
 
