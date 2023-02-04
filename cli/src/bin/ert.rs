@@ -27,8 +27,8 @@ fn main() {
     println!("{r}");
 
     let r = call_error();
-    println!("{:?}", r);
+    println!("{r:?}");
 
     let r = handle_error();
-    println!("{:?}", r);
+    println!("{r:?}");
 }
