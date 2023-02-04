@@ -12,6 +12,8 @@ shared = { path = "../shared" }
 rand = "0.8.5"
 tokio = { version = "1", features = ["full"] }
 mini-redis = "0.4"
+lazy_static = "1.4.0"
+thiserror = "1.0"
 # derives
 hello_macro = { path = "../rs-derive/hello_macro" }
 heapsize = { path = "../rs-derive/heapsize" }
