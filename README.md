@@ -28,3 +28,11 @@ cargo check
 ```bash
 cargo bench --bench my_benchmark
 ```
+
+```bash
+cargo run --example hello
+```
+
+```bash
+cargo run --example sum_macro
+```
