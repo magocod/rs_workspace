@@ -11,12 +11,14 @@ rs-extra = { path = "../rs-extra", features = ["rs-macro"] }
 shared = { path = "../shared" }
 rand = "0.8.5"
 tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1"
 mini-redis = "0.4"
 lazy_static = "1.4.0"
 thiserror = "1.0"
 # derives
 hello_macro = { path = "../rs-derive/hello_macro" }
 heapsize = { path = "../rs-derive/heapsize" }
+getter_derive = { path = "../rs-derive/getter-derive" }
 
 [dev-dependencies]
 criterion = "0.4.0"

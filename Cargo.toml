@@ -7,5 +7,6 @@ members = [
     "rs-derive/*",
     "rs-extra",
     "rs-macro",
+    "rs-proc-macro",
     "shared"
 ]

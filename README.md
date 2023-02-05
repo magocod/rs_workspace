@@ -36,3 +36,7 @@ cargo run --example hello
 ```bash
 cargo run --example sum_macro
 ```
+
+```bash
+cargo run --example show
+```
