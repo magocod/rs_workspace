@@ -7,7 +7,7 @@ pub fn make_answer(_item: TokenStream) -> TokenStream {
 
 #[proc_macro_attribute]
 pub fn show_streams(attr: TokenStream, item: TokenStream) -> TokenStream {
-    println!("attr: \"{}\"", attr);
-    println!("item: \"{}\"", item);
+    println!("attr: \"{attr}\"");
+    println!("item: \"{item}\"");
     item
 }
