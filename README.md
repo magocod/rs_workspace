@@ -10,7 +10,15 @@ cargo build --release
 ```
 
 ```bash
+cargo build -p ffi
+```
+
+```bash
 cargo test
+```
+
+```bash
+cargo test -p ffi
 ```
 
 ```bash
