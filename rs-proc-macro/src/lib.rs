@@ -49,6 +49,17 @@ pub fn add_field(_args: TokenStream, input: TokenStream) -> TokenStream {
     }
 }
 
+/// ### Usage
+///
+/// ```
+/// use rs_proc_macro::Hello;
+///
+/// #[derive(Hello)]
+/// pub struct Example {}
+///
+/// let e = Example {};
+/// e.hello();
+/// ```
 #[proc_macro_derive(Hello)]
 pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
     // Construct a representation of Rust code as a syntax tree

@@ -14,6 +14,10 @@ cargo test
 ```
 
 ```bash
+cargo test --doc
+```
+
+```bash
 cargo fmt --check
 ```
 
