@@ -1,0 +1,6 @@
+[book]
+authors = ["magocod"]
+language = "en"
+multilingual = false
+src = "src"
+title = "docs"
