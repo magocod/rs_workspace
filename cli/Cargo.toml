@@ -9,6 +9,7 @@ edition = "2021"
 rs-core = { path = "../rs-core", features = ['cache'] }
 rs-extra = { path = "../rs-extra", features = ["rs-macro"] }
 shared = { path = "../shared" }
+ffi = { path = "../ffi" }
 rand = "0.8.5"
 tokio = { version = "1", features = ["full"] }
 tokio-stream = "0.1"
