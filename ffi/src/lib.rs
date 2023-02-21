@@ -34,6 +34,7 @@ pub fn call_c() {
 
 pub type FooBarFn = unsafe extern "C" fn(v: i64) -> i64;
 
+#[cfg(target_os = "windows")]
 fn call_dynamic() -> Result<i64, Box<dyn std::error::Error>> {
     unsafe {
         let lib = libloading::Library::new("Dll1.dll")?;
@@ -86,6 +87,7 @@ mod tests {
     // }
 
     #[test]
+    #[cfg(target_os = "windows")]
     fn rust_call_dll() {
         let f = call_dynamic().unwrap();
         println!("{f}");
@@ -93,6 +95,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(target_os = "windows")]
     fn rust_call_dll_with_path() {
         let f = call_dynamic_with_path().unwrap();
         println!("{f}");
@@ -100,6 +103,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(target_os = "windows")]
     fn rust_call_dll_wrapper() {
         let w = DllWrapper::new(LIB_PATH);
         let r = w.foo_bar(0).unwrap();
