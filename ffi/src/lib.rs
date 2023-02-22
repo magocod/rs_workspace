@@ -1,6 +1,8 @@
 // #![allow(non_snake_case)]
 #![allow(dead_code)]
 
+pub mod gpu_performance;
+
 const LIB_PATH: &str = "../lib/Dll1/x64/Debug/Dll1.dll";
 
 extern "C" {
