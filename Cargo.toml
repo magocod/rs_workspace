@@ -8,5 +8,6 @@ members = [
     "rs-extra",
     "rs-macro",
     "rs-proc-macro",
+    "rs-wrapper-sys",
     "shared"
 ]

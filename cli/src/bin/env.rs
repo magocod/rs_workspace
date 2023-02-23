@@ -1,3 +1,4 @@
+// use std::env;
 use shared::environment::{Environment, MyEnum};
 
 fn main() {
