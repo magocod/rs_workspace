@@ -52,3 +52,7 @@ cargo run --example sum_macro
 ```bash
 cargo run --example show
 ```
+
+```bash
+cargo install bindgen-cli
+```
