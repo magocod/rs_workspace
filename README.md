@@ -60,3 +60,11 @@ cargo run --example show
 ```bash
 cargo install bindgen-cli
 ```
+
+```bash
+RUST_LOG=debug cargo run --bin env_log
+```
+
+```bash
+RUST_LOG=debug cargo run --bin env_tracing
+```
