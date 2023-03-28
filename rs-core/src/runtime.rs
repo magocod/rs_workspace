@@ -21,7 +21,11 @@ impl Default for Builder {
 pub struct Runtime {}
 
 impl Runtime {
-    pub fn start(&self) {
-        println!("runtime:start")
+    pub fn start<T>(&self, f: T)
+    where
+        T: FnOnce(),
+    {
+        println!("runtime:start");
+        f()
     }
 }

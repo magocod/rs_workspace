@@ -26,6 +26,10 @@ cargo test --doc
 ```
 
 ```bash
+cargo test -p rs-proc-macro --doc
+```
+
+```bash
 cargo fmt --check
 ```
 

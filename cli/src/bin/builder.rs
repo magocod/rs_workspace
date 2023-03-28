@@ -4,5 +4,5 @@ fn main() {
     rs_core::runtime::Builder::new()
         .build()
         .expect("Failed building the Runtime")
-        .start();
+        .start(|| println!("call runtime.start closure"));
 }
