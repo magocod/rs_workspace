@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 rs-core = { path = "../rs-core", features = ['cache'] }
 rs-extra = { path = "../rs-extra", features = ["rs-macro"] }
+rs-proc-macro = { path = "../rs-proc-macro" }
 shared = { path = "../shared" }
 ffi = { path = "../ffi" }
 rand = "0.8.5"
