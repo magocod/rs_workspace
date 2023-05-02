@@ -1,15 +1,22 @@
 #![allow(non_camel_case_types, non_snake_case)]
 
-use std::{mem, ptr};
 use std::ffi::{c_char, c_void, CString};
+use std::{mem, ptr};
 // use cl3::command_queue::CL_QUEUE_PROFILING_ENABLE;
+use cl::hello;
 use cl3::context::CL_INVALID_VALUE;
 use cl3::device::{get_device_ids, CL_DEVICE_TYPE_ALL};
-use cl3::ext::{clBuildProgram, clCreateBuffer, clCreateCommandQueueWithProperties, clCreateContext, clCreateKernel, clCreateProgramWithSource, clEnqueueNDRangeKernel, clEnqueueWriteBuffer, clSetKernelArg};
+use cl3::ext::{
+    clBuildProgram, clCreateBuffer, clCreateCommandQueueWithProperties, clCreateContext,
+    clCreateKernel, clCreateProgramWithSource, clEnqueueNDRangeKernel, clEnqueueWriteBuffer,
+    clSetKernelArg,
+};
 use cl3::memory::{CL_MEM_READ_ONLY, CL_MEM_WRITE_ONLY};
 use cl3::platform::get_platform_ids;
-use cl3::types::{cl_context, cl_int, cl_command_queue, cl_float, cl_mem, CL_BLOCKING, cl_program, cl_uint, cl_kernel};
-use cl::hello;
+use cl3::types::{
+    cl_command_queue, cl_context, cl_float, cl_int, cl_kernel, cl_mem, cl_program, cl_uint,
+    CL_BLOCKING,
+};
 
 // const PROGRAM_SOURCE: &str = r#"
 // kernel void saxpy_float (global float* z,
@@ -111,18 +118,25 @@ fn main() -> Result<(), cl_int> {
     let mut status: cl_int = CL_INVALID_VALUE;
     let context: cl_context;
     unsafe {
-        context = clCreateContext(ptr::null(), 1, device_id, None, ptr::null_mut(), &mut status);
+        context = clCreateContext(
+            ptr::null(),
+            1,
+            device_id,
+            None,
+            ptr::null_mut(),
+            &mut status,
+        );
     }
 
     println!("clCreateContext: {status}");
-
 
     // // Create a command queue
     // cl_command_queue command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
 
     let command_queue: cl_command_queue;
     unsafe {
-        command_queue = clCreateCommandQueueWithProperties(context, *device_id, ptr::null(), &mut status);
+        command_queue =
+            clCreateCommandQueueWithProperties(context, *device_id, ptr::null(), &mut status);
     }
 
     println!("clCreateCommandQueueWithProperties: {status}");
@@ -138,14 +152,31 @@ fn main() -> Result<(), cl_int> {
     let b_mem_obj: cl_mem;
     let c_mem_obj: cl_mem;
     unsafe {
-        a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, LIST_SIZE * mem::size_of::<cl_int>(), ptr::null_mut(), &mut status);
+        a_mem_obj = clCreateBuffer(
+            context,
+            CL_MEM_READ_ONLY,
+            LIST_SIZE * mem::size_of::<cl_int>(),
+            ptr::null_mut(),
+            &mut status,
+        );
         println!("clCreateBuffer a: {status}");
-        b_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, LIST_SIZE * mem::size_of::<cl_int>(), ptr::null_mut(), &mut status);
+        b_mem_obj = clCreateBuffer(
+            context,
+            CL_MEM_READ_ONLY,
+            LIST_SIZE * mem::size_of::<cl_int>(),
+            ptr::null_mut(),
+            &mut status,
+        );
         println!("clCreateBuffer b: {status}");
-        c_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, LIST_SIZE * mem::size_of::<cl_int>(), ptr::null_mut(), &mut status);
+        c_mem_obj = clCreateBuffer(
+            context,
+            CL_MEM_WRITE_ONLY,
+            LIST_SIZE * mem::size_of::<cl_int>(),
+            ptr::null_mut(),
+            &mut status,
+        );
         println!("clCreateBuffer c: {status}");
     }
-
 
     // // Copy the lists A and B to their respective memory buffers
     // ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0,
@@ -164,7 +195,7 @@ fn main() -> Result<(), cl_int> {
             // A.as_ptr() as *const c_void,
             0,
             ptr::null(),
-            ptr::null_mut()
+            ptr::null_mut(),
         );
         println!("clEnqueueWriteBuffer a: {status}");
 
@@ -177,11 +208,10 @@ fn main() -> Result<(), cl_int> {
             B.as_ptr() as cl_mem,
             0,
             ptr::null(),
-            ptr::null_mut()
+            ptr::null_mut(),
         );
         println!("clEnqueueWriteBuffer b: {status}");
     }
-
 
     // // Create a program from the kernel source
     // cl_program program = clCreateProgramWithSource(context, 1,
@@ -221,9 +251,7 @@ fn main() -> Result<(), cl_int> {
     // // Create the OpenCL kernel
     // cl_kernel kernel = clCreateKernel(program, "vector_add", &ret);
     let c_name = CString::new(KERNEL_NAME).expect("Kernel::create, invalid name");
-    let kernel: cl_kernel = unsafe {
-        clCreateKernel(program, c_name.as_ptr(), &mut status)
-    };
+    let kernel: cl_kernel = unsafe { clCreateKernel(program, c_name.as_ptr(), &mut status) };
 
     println!("clCreateKernel: {status}");
 
@@ -232,34 +260,13 @@ fn main() -> Result<(), cl_int> {
     // ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&b_mem_obj);
     // ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&c_mem_obj);
 
-    status = unsafe {
-        clSetKernelArg(
-            kernel,
-            0 as cl_uint,
-            mem::size_of::<cl_mem>(),
-            ptr::null()
-        )
-    };
+    status = unsafe { clSetKernelArg(kernel, 0 as cl_uint, mem::size_of::<cl_mem>(), ptr::null()) };
     println!("clSetKernelArg a: {status}");
 
-    status = unsafe {
-        clSetKernelArg(
-            kernel,
-            1 as cl_uint,
-            mem::size_of::<cl_mem>(),
-            ptr::null()
-        )
-    };
+    status = unsafe { clSetKernelArg(kernel, 1 as cl_uint, mem::size_of::<cl_mem>(), ptr::null()) };
     println!("clSetKernelArg b: {status}");
 
-    status = unsafe {
-        clSetKernelArg(
-            kernel,
-            2 as cl_uint,
-            mem::size_of::<cl_mem>(),
-            ptr::null()
-        )
-    };
+    status = unsafe { clSetKernelArg(kernel, 2 as cl_uint, mem::size_of::<cl_mem>(), ptr::null()) };
     println!("clSetKernelArg c: {status}");
 
     // // Execute the OpenCL kernel on the list
@@ -268,23 +275,22 @@ fn main() -> Result<(), cl_int> {
     // ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,
     //                              &global_item_size, &local_item_size, 0, NULL, NULL);
 
-    let global_item_size = LIST_SIZE;
-    let local_item_size: usize = 64;
-    status = unsafe {
-        clEnqueueNDRangeKernel(
-            command_queue,
-            kernel,
-            1 as cl_uint,
-            ptr::null(),
-            global_item_size as *const usize,
-            local_item_size as *const usize,
-            0,
-            ptr::null(),
-            ptr::null_mut()
-        )
-    };
-    println!("clEnqueueNDRangeKernel: {status}");
-
+    // let global_item_size = LIST_SIZE;
+    // let local_item_size: usize = 64;
+    // status = unsafe {
+    //     clEnqueueNDRangeKernel(
+    //         command_queue,
+    //         kernel,
+    //         1 as cl_uint,
+    //         ptr::null(),
+    //         global_item_size as *const usize,
+    //         local_item_size as *const usize,
+    //         0,
+    //         ptr::null(),
+    //         ptr::null_mut(),
+    //     )
+    // };
+    // println!("clEnqueueNDRangeKernel: {status}");
 
     // // Read the memory buffer C on the device to the local variable C
     // int *C = (int*)malloc(sizeof(int)*LIST_SIZE);
