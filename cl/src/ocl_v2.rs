@@ -17,7 +17,7 @@ pub const KB_1: usize = 1024; // 1024
 pub const KB_N: usize = KB_1 * 1;
 pub const LIST_SIZE: usize = KB_N;
 pub const PIPE_MAX_PACKETS: usize = 1024;
-pub const PIPE_BLOCKS: usize = 32;
+pub const PIPE_BLOCKS: usize = 1;
 pub const PIPE_MAX_CAP: usize = KB_N * PIPE_MAX_PACKETS;
 
 // CONFIG A =
@@ -317,10 +317,10 @@ impl<'a> PipeBlock<'a> {
         }
 
         // println!("output {output:?}");
-        println!(
-            "consume pipe: {}",
-            String::from_utf8(output_vec.clone()).expect("from_utf8")
-        );
+        // println!(
+        //     "consume pipe: {}",
+        //     String::from_utf8(output_vec.clone()).expect("from_utf8")
+        // );
 
         // Ok(output)
         Ok(output_vec)
@@ -391,6 +391,25 @@ impl<'a> PipeBlock<'a> {
 
         // Ok(output)
         Ok(vec)
+    }
+}
+
+impl<'a> Iterator for PipeBlock<'a> {
+    // We can refer to this type using Self::Item
+    type Item = Vec<u8>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.dequeue() {
+            Ok(vec) => {
+                if vec.len() == 0 {
+                    return None;
+                }
+                Some(vec)
+            }
+            Err(e) => {
+                panic!("opencl_error {e}")
+            }
+        }
     }
 }
 

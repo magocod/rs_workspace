@@ -1,43 +1,40 @@
-use cl::ocl_v2::{BlockConfig, OpenClBlock, PipeBlock, KB_N, PIPE_BLOCKS, PIPE_MAX_PACKETS};
+use cl::ocl_v3::OpenClBlock;
+use opencl3::types::cl_int;
 use std::io::prelude::*;
 use std::io::Result;
 use std::net::TcpListener;
 use std::net::TcpStream;
 
-fn handle_connection(mut stream: TcpStream, pipe: &mut PipeBlock<'_>) {
-    let mut buffer = [0; 9];
+fn handle_connection(mut stream: TcpStream, ocl: &mut OpenClBlock) {
+    let mut buffer = [0; 11];
     stream.read(&mut buffer).unwrap();
     println!("buffer {buffer:?}");
 
     let str = String::from_utf8_lossy(&buffer[..]);
     println!("Request: {str}");
+
+    let parts = str.split("_").collect::<Vec<&str>>();
+    // println!("{parts:?}");
+    let index: u32 = parts[1].parse().unwrap();
+
     if str.contains("set") {
-        pipe.enqueue_v2(&buffer).expect("pipe.enqueue_v2");
+        ocl.enqueue_buffer(&buffer, index as cl_int)
+            .expect("ocl.enqueue_buffer");
     } else {
-        let v = pipe.dequeue_v2().expect("pipe.dequeue_v2");
-        println!("pipe {v:?}")
+        let v = ocl
+            .dequeue_buffer(index as cl_int)
+            .expect("ocl.dequeue_buffer");
+        println!("v {v:?}")
     }
 }
 
 pub fn create_listener(addr: String) -> Result<()> {
     let listener = TcpListener::bind(addr)?;
-
-    let ocl_block = OpenClBlock::new(BlockConfig {
-        buffer_size: KB_N,
-        pipes: KB_N,
-        pipe_max_packets: PIPE_MAX_PACKETS,
-    })
-    .expect("OpenClBlock::new");
-    let mut pipe_blocks = ocl_block
-        .generate_pipes(PIPE_BLOCKS)
-        .expect("ocl_block.generate_pipes()");
-
-    let p = &mut pipe_blocks[0];
-    // println!("p {p:?}");
+    let mut ocl_block = OpenClBlock::new().expect("OpenClBlock::new");
 
     for stream in listener.incoming() {
         let stream = stream.unwrap();
-        handle_connection(stream, p);
+        handle_connection(stream, &mut ocl_block);
     }
     Ok(())
 }

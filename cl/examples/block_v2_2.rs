@@ -20,7 +20,7 @@ fn main() {
         .expect("ocl_block.generate_pipes()");
 
     if let Some(mut pipe_block) = pipe_blocks.pop() {
-        let file = File::open("./cl/examples/files/package-lock.json").expect("File::open");
+        let file = File::open("./cl/examples/files/package.json").expect("File::open");
         let capacity_8_kb = 8192;
         let capacity_8_mb = capacity_8_kb * 1000;
         let mut reader = BufReader::with_capacity(capacity_8_mb, file);
@@ -32,9 +32,13 @@ fn main() {
             .enqueue_v2(buffer)
             .expect("pipe_block.enqueue_v2");
         thread::sleep(Duration::from_millis(1000));
-        let _v = pipe_block.dequeue_v2().expect("pipe_block.dequeue");
+        // let _v = pipe_block.dequeue_v2().expect("pipe_block.dequeue");
         // println!("{v:?}");
-        //
+
+        for v in pipe_block {
+            println!("iter {v:?}");
+        }
+
         // let mut data_file = File::create("./cl/examples/output/constants_mem.js").expect("creation failed");
         // // Write contents to the file
         // data_file.write(v.as_slice()).expect("write failed");
