@@ -10,5 +10,6 @@ members = [
     "rs-macro",
     "rs-proc-macro",
     "rs-wrapper-sys",
-    "shared"
+    "shared",
+    "cool"
 ]
