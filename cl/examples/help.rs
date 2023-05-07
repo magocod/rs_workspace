@@ -1,16 +1,16 @@
 #![allow(non_camel_case_types, non_snake_case)]
 
-use std::ptr;
-use cl3::device::{CL_DEVICE_TYPE_GPU};
-use cl3::types::{cl_int, CL_BLOCKING, cl_event};
-use opencl3::command_queue::{CL_QUEUE_PROFILING_ENABLE, CommandQueue};
+use cl::hello;
+use cl3::device::CL_DEVICE_TYPE_GPU;
+use cl3::types::{cl_event, cl_int, CL_BLOCKING};
+use opencl3::command_queue::{CommandQueue, CL_QUEUE_PROFILING_ENABLE};
 use opencl3::context::Context;
-use opencl3::Result;
-use opencl3::device::{Device, get_all_devices};
+use opencl3::device::{get_all_devices, Device};
 use opencl3::kernel::{ExecuteKernel, Kernel};
 use opencl3::memory::{Buffer, CL_MEM_READ_ONLY, CL_MEM_WRITE_ONLY};
 use opencl3::program::Program;
-use cl::hello;
+use opencl3::Result;
+use std::ptr;
 
 // const PROGRAM_SOURCE: &str = r#"
 // kernel void saxpy_float (global float* z,
@@ -124,13 +124,13 @@ fn main() -> Result<()> {
     let context = Context::from_device(&device).expect("Context::from_device failed");
     println!("{context:?}");
 
-
     // // Create a command queue
     // cl_command_queue command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
 
     // let queue = CommandQueue::create_default(&context, CL_QUEUE_PROFILING_ENABLE)
-    let queue = CommandQueue::create_default_with_properties(&context, CL_QUEUE_PROFILING_ENABLE, 0)
-        .expect("CommandQueue::create_default failed");
+    let queue =
+        CommandQueue::create_default_with_properties(&context, CL_QUEUE_PROFILING_ENABLE, 0)
+            .expect("CommandQueue::create_default failed");
     println!("{queue:?}");
 
     // // Create memory buffers on the device for each vector
@@ -150,16 +150,16 @@ fn main() -> Result<()> {
         Buffer::<cl_int>::create(&context, CL_MEM_WRITE_ONLY, LIST_SIZE, ptr::null_mut())?
     };
 
-
     // // Copy the lists A and B to their respective memory buffers
     // ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0,
     //                            LIST_SIZE * sizeof(int), A, 0, NULL, NULL);
     // ret = clEnqueueWriteBuffer(command_queue, b_mem_obj, CL_TRUE, 0,
     //                            LIST_SIZE * sizeof(int), B, 0, NULL, NULL);
 
-    let _a_write_event = unsafe { queue.enqueue_write_buffer(&mut a_mem_obj, CL_BLOCKING, 0, &A, &[])? };
-    let _b_write_event = unsafe { queue.enqueue_write_buffer(&mut b_mem_obj, CL_BLOCKING, 0, &B, &[])? };
-
+    let _a_write_event =
+        unsafe { queue.enqueue_write_buffer(&mut a_mem_obj, CL_BLOCKING, 0, &A, &[])? };
+    let _b_write_event =
+        unsafe { queue.enqueue_write_buffer(&mut b_mem_obj, CL_BLOCKING, 0, &B, &[])? };
 
     // // Create a program from the kernel source
     // cl_program program = clCreateProgramWithSource(context, 1,
@@ -172,13 +172,11 @@ fn main() -> Result<()> {
     // // Build the program
     // ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
 
-
     // // Create the OpenCL kernel
     // cl_kernel kernel = clCreateKernel(program, "vector_add", &ret);
 
     let kernel = Kernel::create(&program, KERNEL_NAME).expect("Kernel::create failed");
     println!("{kernel:?}");
-
 
     // // Set the arguments of the kernel
     // ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&a_mem_obj);
@@ -198,13 +196,11 @@ fn main() -> Result<()> {
     let mut events: Vec<cl_event> = Vec::default();
     events.push(kernel_event.get());
 
-
     // // Execute the OpenCL kernel on the list
     // size_t global_item_size = LIST_SIZE; // Process the entire lists
     // size_t local_item_size = 64; // Divide work items into groups of 64
     // ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL,
     //                              &global_item_size, &local_item_size, 0, NULL, NULL);
-
 
     // // Read the memory buffer C on the device to the local variable C
     // int *C = (int*)malloc(sizeof(int)*LIST_SIZE);

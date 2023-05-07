@@ -1,2 +1,10 @@
 # [build]
 # rustc-wrapper = "sccache"
+
+#[build]
+#rustflags = [
+#    "-C", "link-arg=/--stack,8000000"
+#]
+
+#[env]
+#RUST_MIN_STACK = "80000000"
