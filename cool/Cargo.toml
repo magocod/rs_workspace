@@ -15,5 +15,5 @@ cl = { path = "../cl" }
 [build-dependencies]
 napi-build = "2.0.1"
 
-[profile.release]
-lto = true
+#[profile.release]
+#lto = true

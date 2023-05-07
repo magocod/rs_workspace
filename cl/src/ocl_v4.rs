@@ -5,12 +5,13 @@ use opencl3::kernel::{ExecuteKernel, Kernel};
 use opencl3::memory::{Buffer, CL_MEM_READ_ONLY, CL_MEM_WRITE_ONLY};
 use opencl3::program::{Program, CL_STD_2_0};
 use opencl3::types::{cl_event, cl_int, CL_BLOCKING};
-use opencl3::Result;
+// use opencl3::Result;
 use std::fs::DirEntry;
 use std::path::Path;
 use std::{fs, io, ptr};
 use std::collections::HashMap;
-use cl3::error_codes::ClError;
+// use cl3::error_codes::ClError;
+use crate::error::{GLOBAL_ARRAY_ID_ASSIGNED, INVALID_BUFFER_LEN, INVALID_GLOBAL_ARRAY_ID, NO_GLOBAL_VECTORS_TO_ASSIGN, OpenclError, OpenClResult};
 
 pub const KB_1: usize = 1024; // 1024
 pub const MB_1: usize = KB_1 * KB_1;
@@ -22,12 +23,6 @@ pub const CAPACITY_GLOBAL_ARRAY: usize = MB_1 * 1;
 
 pub const KERNEL_NAME: &str = "vector_add";
 pub const EXTRACT_KERNEL_NAME: &str = "vector_extract";
-
-// custom cl error codes
-pub const INVALID_GLOBAL_ARRAY_ID: cl_int = -200;
-pub const INVALID_BUFFER_LEN: cl_int = -201;
-pub const GLOBAL_ARRAY_ID_ASSIGNED: cl_int = -202;
-pub const NO_GLOBAL_VECTORS_TO_ASSIGN: cl_int = -202;
 
 #[derive(Debug)]
 pub struct OpenClBlock {
@@ -41,7 +36,7 @@ pub struct OpenClBlock {
 }
 
 impl OpenClBlock {
-    pub fn new() -> Result<OpenClBlock> {
+    pub fn new() -> OpenClResult<OpenClBlock> {
         let device_id = *get_all_devices(CL_DEVICE_TYPE_GPU)?
             .first()
             .expect("no device found in platform");
@@ -95,19 +90,20 @@ impl OpenClBlock {
         vector_extract_kernel
     }
 
-    pub fn enqueue_buffer(&mut self, vector_add_kernel: &Kernel, buf: &[u8], global_array_index: cl_int) -> Result<()> {
+    pub fn enqueue_buffer(&mut self, vector_add_kernel: &Kernel, buf: &[u8], global_array_index: cl_int) -> OpenClResult<()> {
         if buf.len() > LIST_SIZE {
             println!("buffer too large");
-            return Err(ClError(INVALID_BUFFER_LEN));
+            // return Err(ClError(INVALID_BUFFER_LEN));
+            return Err(OpenclError::CustomOpenCl(INVALID_BUFFER_LEN));
         }
 
         if global_array_index > TOTAL_GLOBAL_ARRAY as cl_int {
             println!("global_array_index not valid");
-            return Err(ClError(INVALID_GLOBAL_ARRAY_ID));
+            return Err(OpenclError::CustomOpenCl(INVALID_GLOBAL_ARRAY_ID));
         }
 
         match self.global_arrays.get(&global_array_index) {
-            Some(_) => return Err(ClError(GLOBAL_ARRAY_ID_ASSIGNED)),
+            Some(_) => return Err(OpenclError::CustomOpenCl(GLOBAL_ARRAY_ID_ASSIGNED)),
             None => {
                 // pass
             }
@@ -166,10 +162,10 @@ impl OpenClBlock {
         Ok(())
     }
 
-    pub fn dequeue_buffer(&mut self, vector_extract_kernel: &Kernel, global_array_index: cl_int) -> Result<Vec<u8>> {
+    pub fn dequeue_buffer(&mut self, vector_extract_kernel: &Kernel, global_array_index: cl_int) -> OpenClResult<Vec<u8>> {
         if global_array_index > TOTAL_GLOBAL_ARRAY as cl_int {
             println!("global_array_index not valid");
-            return Err(ClError(INVALID_GLOBAL_ARRAY_ID));
+            return Err(OpenclError::CustomOpenCl(INVALID_GLOBAL_ARRAY_ID));
         }
 
         let output_mem_obj = unsafe {
@@ -236,14 +232,14 @@ impl OpenClBlock {
         Ok(output_vec)
     }
 
-    pub fn get_global_array_index(&self) -> Result<cl_int> {
+    pub fn get_global_array_index(&self) -> OpenClResult<cl_int> {
         let v = &mut self.global_arrays.keys().collect::<Vec<&cl_int>>();
         v.sort();
         println!("get_global_array_index {v:?}");
         match v.pop() {
             Some(i) => {
                 if *i > TOTAL_GLOBAL_ARRAY as cl_int {
-                    return Err(ClError(NO_GLOBAL_VECTORS_TO_ASSIGN))
+                    return Err(OpenclError::CustomOpenCl(NO_GLOBAL_VECTORS_TO_ASSIGN))
                 }
                 Ok(i + 1)
             }

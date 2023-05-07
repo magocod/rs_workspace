@@ -26,6 +26,12 @@ pub mod ocl_v3;
 pub mod ocl_v4;
 pub mod process;
 pub mod server;
+pub mod error;
+
+// re-export
+pub mod open_cl3 {
+    pub use opencl3::*;
+}
 
 #[cfg(test)]
 mod tests {

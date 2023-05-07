@@ -10,7 +10,15 @@
   "license": "MIT",
   "devDependencies": {
     "@napi-rs/cli": "^2.15.2",
-    "ava": "^5.1.1"
+    "@types/chai": "^4.3.5",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "^20.1.0",
+    "ava": "^5.1.1",
+    "chai": "^4.3.7",
+    "mocha": "^10.2.0",
+    "rimraf": "^5.0.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.4"
   },
   "ava": {
     "timeout": "3m"
@@ -22,8 +30,10 @@
     "artifacts": "napi artifacts",
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
-    "prepublishOnly": "napi prepublish -t npm",
+    "prepublishOnly": "napi prepublish -t npmte",
     "test": "ava",
+    "test:mocha": "mocha -r ts-node/register \"test/**/*.spec.ts\" --recursive",
+    "test:mocha:file": "mocha -r ts-node/register test/opencl_buffer.spec.ts",
     "universal": "napi universal",
     "version": "napi version"
   },
