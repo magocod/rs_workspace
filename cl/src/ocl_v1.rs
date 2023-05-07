@@ -1,4 +1,3 @@
-use cl3::ext::cl_char;
 use opencl3::command_queue::{CommandQueue, CL_QUEUE_PROFILING_ENABLE};
 use opencl3::context::Context;
 use opencl3::device::{get_all_devices, Device, CL_DEVICE_TYPE_GPU};
@@ -132,7 +131,7 @@ impl OpenClBlock {
     pub fn dequeue(&self) -> Result<Vec<u8>> {
         // ERROR HERE cl_char
         let output_mem_obj = unsafe {
-            Buffer::<cl_char>::create(&self.context, CL_MEM_WRITE_ONLY, LIST_SIZE, ptr::null_mut())?
+            Buffer::<cl_int>::create(&self.context, CL_MEM_WRITE_ONLY, LIST_SIZE, ptr::null_mut())?
         };
 
         let kernel_event = unsafe {
@@ -152,7 +151,7 @@ impl OpenClBlock {
         let mut events: Vec<cl_event> = Vec::default();
         events.push(kernel_event.get());
 
-        let mut output: [cl_char; LIST_SIZE] = [0; LIST_SIZE];
+        let mut output: [cl_int; LIST_SIZE] = [0; LIST_SIZE];
 
         let read_event = unsafe {
             &self.queue.enqueue_read_buffer(
