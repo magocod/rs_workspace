@@ -1,18 +1,18 @@
 import { assert } from "chai";
 // import { promises as fsp } from "fs";
 
-import { OclBlock } from '../index.js'
+import { DEFAULT_VECTOR_SIZE, DEFAULT_GLOBAL_ARRAY_COUNT, OclBlock } from '../index.js'
 import { Buffer } from "buffer";
 
 describe("opencl_buffer", function () {
     const data = "hello";
 
-    let oclBlock = new OclBlock();
+    let oclBlock = new OclBlock(DEFAULT_VECTOR_SIZE, DEFAULT_GLOBAL_ARRAY_COUNT);
     oclBlock.initialize();
     let index: number;
 
     it("initialize", function () {
-        let block = new OclBlock();
+        let block = new OclBlock(DEFAULT_VECTOR_SIZE, DEFAULT_GLOBAL_ARRAY_COUNT);
         block.initialize();
         let i = block.enqueueBuffer(Buffer.from("world"));
         let buffer = block.dequeueBuffer(i);

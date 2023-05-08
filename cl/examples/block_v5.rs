@@ -1,6 +1,6 @@
 #![allow(non_camel_case_types, non_snake_case)]
 
-use cl::ocl_v5::{OpenClBlock, MB_1};
+use cl::ocl_v5::{OpenClBlock, LIST_SIZE, MB_1, TOTAL_GLOBAL_ARRAY};
 use opencl3::Result;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -8,7 +8,8 @@ use std::thread;
 use std::time::Duration;
 
 fn main() -> Result<()> {
-    let mut ocl_block = OpenClBlock::new().expect("OpenClBlock::new()");
+    let mut ocl_block =
+        OpenClBlock::new(LIST_SIZE, TOTAL_GLOBAL_ARRAY).expect("OpenClBlock::new()");
     let vector_add_kernel = ocl_block.create_vector_add_kernel();
     let vector_extract_kernel = ocl_block.create_vector_extract_kernel();
 

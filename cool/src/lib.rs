@@ -3,8 +3,13 @@
 #[macro_use]
 extern crate napi_derive;
 
-use cl::ocl_v5::OpenClBlock;
+use cl::ocl_v5::{LIST_SIZE, OpenClBlock, TOTAL_GLOBAL_ARRAY};
 use napi::bindgen_prelude::{BigInt, Buffer};
+
+#[napi]
+pub const DEFAULT_VECTOR_SIZE: u32 = LIST_SIZE as u32;
+#[napi]
+pub const DEFAULT_GLOBAL_ARRAY_COUNT: u32 = TOTAL_GLOBAL_ARRAY as u32;
 
 #[napi]
 pub fn sum(a: i32, b: i32) -> i32 {
@@ -25,9 +30,10 @@ pub struct GlobalArrayAssigned {
 #[napi]
 impl OclBlock {
   #[napi(constructor)]
-  pub fn new() -> Self {
+  pub fn new(vector_size: u32, global_array_count: u32) -> Self {
     OclBlock {
-      inner: OpenClBlock::new().expect("OpenClBlock::new() failed"),
+      inner: OpenClBlock::new(vector_size as usize, global_array_count as usize)
+        .expect("OpenClBlock::new() failed"),
     }
   }
 
@@ -49,9 +55,7 @@ impl OclBlock {
   #[napi]
   pub fn dequeue_buffer(&mut self, global_array_index: u32) -> napi::Result<Buffer> {
     let k = self.inner.create_vector_extract_kernel();
-    let v = self
-      .inner
-      .dequeue_buffer(&k, global_array_index)?;
+    let v = self.inner.dequeue_buffer(&k, global_array_index)?;
     Ok(Buffer::from(v))
   }
 
@@ -60,8 +64,11 @@ impl OclBlock {
     let map = self.inner.get_global_arrays();
     let mut vec = Vec::with_capacity(map.len());
 
-    for (index , size) in map {
-      vec.push(GlobalArrayAssigned { index: *index, size: BigInt::from(*size) });
+    for (index, size) in map {
+      vec.push(GlobalArrayAssigned {
+        index: *index,
+        size: BigInt::from(*size),
+      });
     }
 
     Ok(vec)

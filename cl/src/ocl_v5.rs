@@ -37,10 +37,13 @@ pub struct OpenClBlock {
     queue: CommandQueue,
     program: Program,
     global_arrays: HashMap<u32, u64>,
+    // config
+    vector_size: usize,
+    global_array_count: usize,
 }
 
 impl OpenClBlock {
-    pub fn new() -> OpenClResult<OpenClBlock> {
+    pub fn new(vector_size: usize, global_array_count: usize) -> OpenClResult<OpenClBlock> {
         let device_id = *get_all_devices(CL_DEVICE_TYPE_GPU)?
             .first()
             .expect("no device found in platform");
@@ -77,6 +80,8 @@ impl OpenClBlock {
             queue,
             program,
             global_arrays: HashMap::new(),
+            vector_size,
+            global_array_count,
         })
     }
 
@@ -101,13 +106,13 @@ impl OpenClBlock {
         global_array_index: u32,
     ) -> OpenClResult<()> {
         // println!("LIST_SIZE {LIST_SIZE}");
-        if buf.len() > LIST_SIZE {
+        if buf.len() > self.vector_size {
             println!("buffer too large");
             // return Err(ClError(INVALID_BUFFER_LEN));
             return Err(OpenclError::CustomOpenCl(INVALID_BUFFER_LEN));
         }
 
-        if global_array_index > TOTAL_GLOBAL_ARRAY as u32 {
+        if global_array_index > self.global_array_count as u32 {
             println!("global_array_index not valid");
             return Err(OpenclError::CustomOpenCl(INVALID_GLOBAL_ARRAY_ID));
         }
@@ -120,13 +125,23 @@ impl OpenClBlock {
         }
 
         let mut input_mem_obj = unsafe {
-            Buffer::<cl_int>::create(&self.context, CL_MEM_READ_ONLY, LIST_SIZE, ptr::null_mut())?
+            Buffer::<cl_int>::create(
+                &self.context,
+                CL_MEM_READ_ONLY,
+                self.vector_size,
+                ptr::null_mut(),
+            )?
         };
 
         // select global array
-        let d = vec![global_array_index as cl_int; LIST_SIZE];
+        let d = vec![global_array_index as cl_int; self.vector_size];
         let mut d_mem_obj = unsafe {
-            Buffer::<cl_int>::create(&self.context, CL_MEM_READ_ONLY, LIST_SIZE, ptr::null_mut())?
+            Buffer::<cl_int>::create(
+                &self.context,
+                CL_MEM_READ_ONLY,
+                self.vector_size,
+                ptr::null_mut(),
+            )?
         };
         let _d_write_event = unsafe {
             &self
@@ -134,7 +149,7 @@ impl OpenClBlock {
                 .enqueue_write_buffer(&mut d_mem_obj, CL_BLOCKING, 0, &d, &[])?
         };
 
-        let mut input = vec![-1; LIST_SIZE];
+        let mut input = vec![-1; self.vector_size];
 
         for (i, v) in buf.iter().enumerate() {
             input[i] = *v as cl_int;
@@ -151,7 +166,7 @@ impl OpenClBlock {
 
             ex.set_arg(&input_mem_obj).set_arg(&d_mem_obj);
 
-            ex.set_global_work_size(LIST_SIZE)
+            ex.set_global_work_size(self.vector_size)
                 .set_local_work_size(64)
                 .enqueue_nd_range(&self.queue)?
         };
@@ -169,19 +184,29 @@ impl OpenClBlock {
         vector_extract_kernel: &Kernel,
         global_array_index: u32,
     ) -> OpenClResult<Vec<u8>> {
-        if global_array_index > TOTAL_GLOBAL_ARRAY as u32 {
+        if global_array_index > self.global_array_count as u32 {
             println!("global_array_index not valid");
             return Err(OpenclError::CustomOpenCl(INVALID_GLOBAL_ARRAY_ID));
         }
 
         let output_mem_obj = unsafe {
-            Buffer::<cl_int>::create(&self.context, CL_MEM_WRITE_ONLY, LIST_SIZE, ptr::null_mut())?
+            Buffer::<cl_int>::create(
+                &self.context,
+                CL_MEM_WRITE_ONLY,
+                self.vector_size,
+                ptr::null_mut(),
+            )?
         };
 
         // select global array
-        let d = vec![global_array_index as cl_int; LIST_SIZE];
+        let d = vec![global_array_index as cl_int; self.vector_size];
         let mut d_mem_obj = unsafe {
-            Buffer::<cl_int>::create(&self.context, CL_MEM_READ_ONLY, LIST_SIZE, ptr::null_mut())?
+            Buffer::<cl_int>::create(
+                &self.context,
+                CL_MEM_READ_ONLY,
+                self.vector_size,
+                ptr::null_mut(),
+            )?
         };
         let _d_write_event = unsafe {
             &self
@@ -194,7 +219,7 @@ impl OpenClBlock {
 
             ex.set_arg(&output_mem_obj).set_arg(&d_mem_obj);
 
-            ex.set_global_work_size(LIST_SIZE)
+            ex.set_global_work_size(self.vector_size)
                 .set_local_work_size(64)
                 .enqueue_nd_range(&self.queue)?
         };
@@ -202,7 +227,7 @@ impl OpenClBlock {
         let mut events: Vec<cl_event> = Vec::default();
         events.push(kernel_event.get());
 
-        let mut output = vec![-1; LIST_SIZE];
+        let mut output = vec![-1; self.vector_size];
 
         let _read_event = unsafe {
             &self.queue.enqueue_read_buffer(
@@ -222,7 +247,7 @@ impl OpenClBlock {
             // .cloned()
             .filter_map(|x| -> Option<u8> {
                 if *x > -1 {
-                    return Some(*x as u8)
+                    return Some(*x as u8);
                 }
                 None
             })
@@ -248,7 +273,7 @@ impl OpenClBlock {
         println!("get_global_array_index {v:?}");
         match v.pop() {
             Some(i) => {
-                if *i > TOTAL_GLOBAL_ARRAY as u32 {
+                if *i > self.global_array_count as u32 {
                     return Err(OpenclError::CustomOpenCl(NO_GLOBAL_VECTORS_TO_ASSIGN));
                 }
                 Ok(i + 1)
@@ -265,12 +290,6 @@ impl OpenClBlock {
         &self.global_arrays
     }
 }
-
-// #[derive(Debug)]
-// pub struct GlobalIntArray {
-//     index: cl_int,
-//     size: u64, // path
-// }
 
 pub fn gen_vector_program_source(arrays: usize, capacity: usize) -> String {
     let mut global_arrays = String::from(

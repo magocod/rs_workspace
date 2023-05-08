@@ -252,7 +252,9 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { sum, OclBlock } = nativeBinding
+const { DEFAULT_VECTOR_SIZE, DEFAULT_GLOBAL_ARRAY_COUNT, sum, OclBlock } = nativeBinding
 
+module.exports.DEFAULT_VECTOR_SIZE = DEFAULT_VECTOR_SIZE
+module.exports.DEFAULT_GLOBAL_ARRAY_COUNT = DEFAULT_GLOBAL_ARRAY_COUNT
 module.exports.sum = sum
 module.exports.OclBlock = OclBlock
