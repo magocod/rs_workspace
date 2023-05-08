@@ -1,6 +1,6 @@
 #![allow(non_camel_case_types, non_snake_case)]
 
-use cl::ocl_v4::{OpenClBlock, MB_1};
+use cl::ocl_v5::{OpenClBlock, MB_1};
 use opencl3::Result;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -24,7 +24,7 @@ fn main() -> Result<()> {
             let buffer = reader.fill_buf().unwrap();
             println!("buffer.len {}", buffer.len());
 
-            let index = 1;
+            let index = 0;
             ocl_block
                 .enqueue_buffer(&vector_add_kernel, buffer, index)
                 .expect("ocl_block.enqueue_buffer");

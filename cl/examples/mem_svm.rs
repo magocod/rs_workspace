@@ -1,15 +1,14 @@
 #![allow(non_camel_case_types, non_snake_case)]
 
 use cl::hello;
-use cl3::device::CL_DEVICE_TYPE_GPU;
-use cl3::types::{cl_event, cl_int, CL_BLOCKING};
 use opencl3::command_queue::{CommandQueue, CL_QUEUE_PROFILING_ENABLE};
 use opencl3::context::Context;
-use opencl3::device::{get_all_devices, Device};
+use opencl3::device::{get_all_devices, Device, CL_DEVICE_TYPE_GPU};
 use opencl3::kernel::{ExecuteKernel, Kernel};
 use opencl3::memory::{Buffer, CL_MAP_WRITE, CL_MEM_READ_ONLY, CL_MEM_WRITE_ONLY};
 use opencl3::program::{Program, CL_STD_2_0};
 use opencl3::svm::SvmVec;
+use opencl3::types::{cl_int, CL_BLOCKING};
 use opencl3::Result;
 use std::ptr;
 
@@ -19,11 +18,16 @@ kernel void vector_add(global int* A, global int* B, global int* C) {
     // Get the index of the current element
     int i = get_global_id(0);
     size_t lid = get_local_id(0);
+    size_t lsize = get_local_size(0);
 
-    printf("global_id %d %d",  i, lid);
+    // printf("global_id %d %d",  i, lid);
+
+    size_t lidx = i * lsize + lid;
+    C[lidx] = 10;
+
     // Do the operation
     // C[i] = A[i] + B[i];
-    C[i] = 10;
+    // C[i] = 10;
 }"#;
 
 const KERNEL_NAME: &str = "vector_add";

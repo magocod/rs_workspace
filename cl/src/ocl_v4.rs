@@ -6,12 +6,15 @@ use opencl3::memory::{Buffer, CL_MEM_READ_ONLY, CL_MEM_WRITE_ONLY};
 use opencl3::program::{Program, CL_STD_2_0};
 use opencl3::types::{cl_event, cl_int, CL_BLOCKING};
 // use opencl3::Result;
+use std::collections::HashMap;
 use std::fs::DirEntry;
 use std::path::Path;
 use std::{fs, io, ptr};
-use std::collections::HashMap;
 // use cl3::error_codes::ClError;
-use crate::error::{GLOBAL_ARRAY_ID_ASSIGNED, INVALID_BUFFER_LEN, INVALID_GLOBAL_ARRAY_ID, NO_GLOBAL_VECTORS_TO_ASSIGN, OpenclError, OpenClResult};
+use crate::error::{
+    OpenClResult, OpenclError, GLOBAL_ARRAY_ID_ASSIGNED, INVALID_BUFFER_LEN,
+    INVALID_GLOBAL_ARRAY_ID, NO_GLOBAL_VECTORS_TO_ASSIGN,
+};
 
 pub const KB_1: usize = 1024; // 1024
 pub const MB_1: usize = KB_1 * KB_1;
@@ -83,14 +86,19 @@ impl OpenClBlock {
         vector_add_kernel
     }
 
-    pub fn create_vector_extract_kernel(&self) -> Kernel{
+    pub fn create_vector_extract_kernel(&self) -> Kernel {
         let vector_extract_kernel =
             Kernel::create(&self.program, EXTRACT_KERNEL_NAME).expect("Kernel::create failed");
         println!("{vector_extract_kernel:?}");
         vector_extract_kernel
     }
 
-    pub fn enqueue_buffer(&mut self, vector_add_kernel: &Kernel, buf: &[u8], global_array_index: cl_int) -> OpenClResult<()> {
+    pub fn enqueue_buffer(
+        &mut self,
+        vector_add_kernel: &Kernel,
+        buf: &[u8],
+        global_array_index: cl_int,
+    ) -> OpenClResult<()> {
         if buf.len() > LIST_SIZE {
             println!("buffer too large");
             // return Err(ClError(INVALID_BUFFER_LEN));
@@ -154,15 +162,17 @@ impl OpenClBlock {
 
         event.wait().expect("event.wait");
 
-        self.global_arrays.insert(
-            global_array_index,
-            buf.len() as u64,
-        );
+        self.global_arrays
+            .insert(global_array_index, buf.len() as u64);
 
         Ok(())
     }
 
-    pub fn dequeue_buffer(&mut self, vector_extract_kernel: &Kernel, global_array_index: cl_int) -> OpenClResult<Vec<u8>> {
+    pub fn dequeue_buffer(
+        &mut self,
+        vector_extract_kernel: &Kernel,
+        global_array_index: cl_int,
+    ) -> OpenClResult<Vec<u8>> {
         if global_array_index > TOTAL_GLOBAL_ARRAY as cl_int {
             println!("global_array_index not valid");
             return Err(OpenclError::CustomOpenCl(INVALID_GLOBAL_ARRAY_ID));
@@ -239,13 +249,11 @@ impl OpenClBlock {
         match v.pop() {
             Some(i) => {
                 if *i > TOTAL_GLOBAL_ARRAY as cl_int {
-                    return Err(OpenclError::CustomOpenCl(NO_GLOBAL_VECTORS_TO_ASSIGN))
+                    return Err(OpenclError::CustomOpenCl(NO_GLOBAL_VECTORS_TO_ASSIGN));
                 }
                 Ok(i + 1)
             }
-            None => {
-                Ok(0)
-            }
+            None => Ok(0),
         }
     }
 

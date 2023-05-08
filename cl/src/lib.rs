@@ -20,13 +20,14 @@ pub fn hello() -> String {
     "hello".to_string()
 }
 
+pub mod error;
 pub mod ocl_v1;
 pub mod ocl_v2;
 pub mod ocl_v3;
 pub mod ocl_v4;
+pub mod ocl_v5;
 pub mod process;
 pub mod server;
-pub mod error;
 
 // re-export
 pub mod open_cl3 {

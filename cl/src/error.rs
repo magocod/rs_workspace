@@ -1,6 +1,6 @@
+use napi::{Error as NapiError, JsError, Status};
 use opencl3::error_codes::ClError;
 use opencl3::types::cl_int;
-use napi::{Error as NapiError, JsError, Status};
 
 // custom cl error codes
 pub const INVALID_GLOBAL_ARRAY_ID: cl_int = -200;
@@ -10,7 +10,7 @@ pub const NO_GLOBAL_VECTORS_TO_ASSIGN: cl_int = -203;
 
 #[derive(Debug)]
 pub enum OpenclError {
-    OpenCl(cl_int), // original opencl error code
+    OpenCl(cl_int),       // original opencl error code
     CustomOpenCl(cl_int), // custom cl error code
     Other,
     // Napi(NapiError)
@@ -78,24 +78,11 @@ impl From<NapiError> for OpenclError {
 impl From<OpenclError> for NapiError {
     fn from(e: OpenclError) -> Self {
         match e {
-            OpenclError::OpenCl(v) => {
-                Self::new(
-                    Status::Unknown,
-                    format!("opencl error code: {v}"),
-                )
-            }
+            OpenclError::OpenCl(v) => Self::new(Status::Unknown, format!("opencl error code: {v}")),
             OpenclError::CustomOpenCl(v) => {
-                Self::new(
-                    Status::Unknown,
-                    format!("custom opencl error code: {v}"),
-                )
+                Self::new(Status::Unknown, format!("custom opencl error code: {v}"))
             }
-            OpenclError::Other => {
-                Self::new(
-                    Status::Unknown,
-                    format!("unknown opencl error"),
-                )
-            }
+            OpenclError::Other => Self::new(Status::Unknown, format!("unknown opencl error")),
         }
     }
 }

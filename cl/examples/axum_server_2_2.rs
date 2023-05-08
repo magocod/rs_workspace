@@ -5,9 +5,9 @@ use axum::{
 };
 use cl::ocl_v4::OpenClBlock;
 use cl::server::{GetRequest, Payload, SaveRequest};
+use opencl3::types::cl_int;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
-use opencl3::types::cl_int;
 // use axum::extract::State;
 
 // #[derive(Clone)]
@@ -41,7 +41,7 @@ async fn main() {
             }),
         )
         .with_state(shared_state);
-        // .with_state(state);
+    // .with_state(state);
 
     // run our app with hyper
     // `axum::Server` is a re-export of `hyper::Server`
@@ -82,18 +82,14 @@ async fn save_buffer(
         Ok(i) => {
             index = i;
         }
-        Err(_) => {
-            return (StatusCode::BAD_REQUEST, Json(p))
-        }
+        Err(_) => return (StatusCode::BAD_REQUEST, Json(p)),
     }
 
     match ocl_block.enqueue_buffer(&kernel, payload.value.as_bytes(), index) {
         Ok(_) => {
             // pass
         }
-        Err(_) => {
-            return (StatusCode::BAD_REQUEST, Json(p))
-        }
+        Err(_) => return (StatusCode::BAD_REQUEST, Json(p)),
     }
 
     p.index = index;
@@ -123,7 +119,7 @@ async fn get_buffer(
 
     let p = Payload {
         index: payload.index,
-        value: String::from_utf8(vec).unwrap()
+        value: String::from_utf8(vec).unwrap(),
     };
 
     // this will be converted into a JSON response

@@ -29,4 +29,24 @@ describe("opencl_buffer", function () {
         let buffer = oclBlock.dequeueBuffer(index);
         assert.equal(buffer.toString("utf8"), data);
     });
+
+    // it("readFile", async function () {
+    //     const readBuffer = await fsp.readFile('../cl/examples/files/package-lock.json');
+    //     // const readBuffer = await fsp.readFile('../cl/examples/files/libaho.rmeta');
+    //     console.log(readBuffer.length)
+    //
+    //     let i = oclBlock.enqueueBuffer(readBuffer);
+    //     let buffer = oclBlock.dequeueBuffer(i);
+    //     console.log(buffer.toString("utf8"))
+    //
+    //     // await fsp.writeFile("package-lock.buffer.json", buffer);
+    //     // await fsp.writeFile("libaho_buffer.rmeta", buffer);
+    //     assert.isNotNull(buffer);
+    // });
+
+    it("getGlobalArrays", function () {
+        let globalArrays = oclBlock.getGlobalArrays();
+        console.log(globalArrays);
+        assert.isTrue(Array.isArray(globalArrays));
+    });
 });

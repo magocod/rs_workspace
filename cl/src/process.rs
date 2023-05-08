@@ -15,8 +15,8 @@ pub fn chunk_buffer(buffer: &[u8], bytes: usize) {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
     use super::*;
+    use std::collections::HashMap;
     const KB_1: usize = 1024;
 
     #[test]
@@ -80,19 +80,13 @@ mod tests {
     fn practice_hash_map() {
         let mut book_reviews = HashMap::new();
 
-        book_reviews.insert(
-            "a".to_string(),
-            "a".to_string(),
-        );
+        book_reviews.insert("a".to_string(), "a".to_string());
 
-        book_reviews.insert(
-            "a".to_string(),
-            "b".to_string(),
-        );
+        book_reviews.insert("a".to_string(), "b".to_string());
 
         match book_reviews.get("a") {
             Some(review) => println!("{review}"),
-            None => println!("unreviewed.")
+            None => println!("unreviewed."),
         }
 
         assert_eq!(1, book_reviews.len());
