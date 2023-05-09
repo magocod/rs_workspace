@@ -28,6 +28,8 @@ pub const CAPACITY_GLOBAL_ARRAY: usize = SIZE;
 pub const KERNEL_NAME: &str = "vector_add";
 pub const EXTRACT_KERNEL_NAME: &str = "vector_extract";
 
+pub type GlobalArrayMap = HashMap<u32, u64>;
+
 #[derive(Debug)]
 pub struct OpenClBlock {
     context: Context,
@@ -36,7 +38,7 @@ pub struct OpenClBlock {
     // vector_extract_kernel: Kernel,
     queue: CommandQueue,
     program: Program,
-    global_arrays: HashMap<u32, u64>,
+    global_arrays: GlobalArrayMap,
     // config
     vector_size: usize,
     global_array_count: usize,
@@ -286,7 +288,7 @@ impl OpenClBlock {
         println!("{:#?}", self.global_arrays);
     }
 
-    pub fn get_global_arrays(&self) -> &HashMap<u32, u64> {
+    pub fn get_global_arrays(&self) -> &GlobalArrayMap {
         &self.global_arrays
     }
 }

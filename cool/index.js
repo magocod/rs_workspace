@@ -252,8 +252,13 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { DEFAULT_VECTOR_SIZE, DEFAULT_GLOBAL_ARRAY_COUNT, sum, OclBlock } = nativeBinding
+const { add, showArray, addGlobalVec, showGlobalVec, getGlobalVec, DEFAULT_VECTOR_SIZE, DEFAULT_GLOBAL_ARRAY_COUNT, sum, OclBlock } = nativeBinding
 
+module.exports.add = add
+module.exports.showArray = showArray
+module.exports.addGlobalVec = addGlobalVec
+module.exports.showGlobalVec = showGlobalVec
+module.exports.getGlobalVec = getGlobalVec
 module.exports.DEFAULT_VECTOR_SIZE = DEFAULT_VECTOR_SIZE
 module.exports.DEFAULT_GLOBAL_ARRAY_COUNT = DEFAULT_GLOBAL_ARRAY_COUNT
 module.exports.sum = sum

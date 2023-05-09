@@ -41,7 +41,7 @@ async function findDirFiles(folderName, from) {
 }
 
 async function main() {
-  const baseFolder = 'target';
+  const baseFolder = 'cool/.yarn';
   const p = path.resolve(__dirname, baseFolder);
   console.log('base folder: ', p);
   // const salesFiles = await findDirFiles(path.join(__dirname, "tmp"));

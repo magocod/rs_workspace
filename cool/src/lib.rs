@@ -3,8 +3,11 @@
 #[macro_use]
 extern crate napi_derive;
 
-use cl::ocl_v5::{LIST_SIZE, OpenClBlock, TOTAL_GLOBAL_ARRAY};
+use cl::ocl_v5::{OpenClBlock, LIST_SIZE, TOTAL_GLOBAL_ARRAY};
 use napi::bindgen_prelude::{BigInt, Buffer};
+
+pub mod fs;
+pub mod global;
 
 #[napi]
 pub const DEFAULT_VECTOR_SIZE: u32 = LIST_SIZE as u32;
@@ -16,11 +19,13 @@ pub fn sum(a: i32, b: i32) -> i32 {
   a + b
 }
 
+#[derive(Debug)]
 #[napi(js_name = "OclBlock")]
 pub struct OclBlock {
   inner: OpenClBlock,
 }
 
+#[derive(Debug)]
 #[napi(object)]
 pub struct GlobalArrayAssigned {
   pub index: u32,
@@ -74,3 +79,5 @@ impl OclBlock {
     Ok(vec)
   }
 }
+
+// TODO TESTS
