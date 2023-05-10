@@ -252,10 +252,14 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { add, showArray, addGlobalVec, showGlobalVec, getGlobalVec, DEFAULT_VECTOR_SIZE, DEFAULT_GLOBAL_ARRAY_COUNT, sum, OclBlock } = nativeBinding
+const { writeFileSync, readFileSynchronous, existsSynchronous, FileHandle, cache, oclCache, addGlobalVec, showGlobalVec, getGlobalVec, DEFAULT_VECTOR_SIZE, DEFAULT_GLOBAL_ARRAY_COUNT, sum, OclBlock } = nativeBinding
 
-module.exports.add = add
-module.exports.showArray = showArray
+module.exports.writeFileSync = writeFileSync
+module.exports.readFileSynchronous = readFileSynchronous
+module.exports.existsSynchronous = existsSynchronous
+module.exports.FileHandle = FileHandle
+module.exports.cache = cache
+module.exports.oclCache = oclCache
 module.exports.addGlobalVec = addGlobalVec
 module.exports.showGlobalVec = showGlobalVec
 module.exports.getGlobalVec = getGlobalVec

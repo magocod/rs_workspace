@@ -1,4 +1,4 @@
-use napi::{Error as NapiError, JsError, Status};
+use napi::{Error as NapiError, Status};
 use opencl3::error_codes::ClError;
 use opencl3::types::cl_int;
 
@@ -37,11 +37,11 @@ impl From<ClError> for OpenclError {
     }
 }
 
-impl From<JsError> for OpenclError {
-    fn from(_: JsError) -> Self {
-        OpenclError::Other
-    }
-}
+// impl From<JsError> for OpenclError {
+//     fn from(_: JsError) -> Self {
+//         OpenclError::Other
+//     }
+// }
 
 impl From<NapiError> for OpenclError {
     fn from(_: NapiError) -> Self {

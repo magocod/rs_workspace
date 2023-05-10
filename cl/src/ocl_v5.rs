@@ -12,8 +12,12 @@ use std::path::Path;
 use std::{fs, io, ptr};
 // use cl3::error_codes::ClError;
 use crate::error::{
-    OpenClResult, OpenclError, GLOBAL_ARRAY_ID_ASSIGNED, INVALID_BUFFER_LEN,
-    INVALID_GLOBAL_ARRAY_ID, NO_GLOBAL_VECTORS_TO_ASSIGN,
+    OpenClResult,
+    OpenclError,
+    // GLOBAL_ARRAY_ID_ASSIGNED,
+    INVALID_BUFFER_LEN,
+    INVALID_GLOBAL_ARRAY_ID,
+    NO_GLOBAL_VECTORS_TO_ASSIGN,
 };
 
 pub const KB_1: usize = 1024; // 1024
@@ -119,12 +123,12 @@ impl OpenClBlock {
             return Err(OpenclError::CustomOpenCl(INVALID_GLOBAL_ARRAY_ID));
         }
 
-        match self.global_arrays.get(&global_array_index) {
-            Some(_) => return Err(OpenclError::CustomOpenCl(GLOBAL_ARRAY_ID_ASSIGNED)),
-            None => {
-                // pass
-            }
-        }
+        // match self.global_arrays.get(&global_array_index) {
+        //     Some(_) => return Err(OpenclError::CustomOpenCl(GLOBAL_ARRAY_ID_ASSIGNED)),
+        //     None => {
+        //         // pass
+        //     }
+        // }
 
         let mut input_mem_obj = unsafe {
             Buffer::<cl_int>::create(
@@ -182,7 +186,7 @@ impl OpenClBlock {
     }
 
     pub fn dequeue_buffer(
-        &mut self,
+        &self,
         vector_extract_kernel: &Kernel,
         global_array_index: u32,
     ) -> OpenClResult<Vec<u8>> {
@@ -282,6 +286,12 @@ impl OpenClBlock {
             }
             None => Ok(0),
         }
+    }
+
+    pub fn assign_global_array_index(&mut self) -> OpenClResult<u32> {
+        let i = self.get_global_array_index()?;
+        self.global_arrays.insert(i, 0);
+        Ok(i)
     }
 
     pub fn show_global_arrays(&self) {

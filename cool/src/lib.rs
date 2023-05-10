@@ -25,7 +25,7 @@ pub struct OclBlock {
   inner: OpenClBlock,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[napi(object)]
 pub struct GlobalArrayAssigned {
   pub index: u32,
@@ -42,6 +42,10 @@ impl OclBlock {
     }
   }
 
+  pub fn opencl_block(&self) -> &OpenClBlock {
+    &self.inner
+  }
+
   #[napi]
   pub fn initialize(&self) -> napi::Result<()> {
     let _ = self.inner.create_vector_add_kernel();
@@ -50,19 +54,42 @@ impl OclBlock {
   }
 
   #[napi]
-  pub fn enqueue_buffer(&mut self, js_buffer: Buffer) -> napi::Result<u32> {
+  pub fn enqueue_buffer(
+    &mut self,
+    js_buffer: Buffer,
+    global_array_index: Option<u32>,
+  ) -> napi::Result<u32> {
     let k = self.inner.create_vector_add_kernel();
-    let index = self.inner.get_global_array_index()?;
+
+    let index = match global_array_index {
+      None => self.inner.get_global_array_index()?,
+      Some(v) => v,
+    };
     self.inner.enqueue_buffer(&k, js_buffer.as_ref(), index)?;
     Ok(index as u32)
   }
 
   #[napi]
-  pub fn dequeue_buffer(&mut self, global_array_index: u32) -> napi::Result<Buffer> {
+  pub fn dequeue_buffer(&self, global_array_index: u32) -> napi::Result<Buffer> {
     let k = self.inner.create_vector_extract_kernel();
     let v = self.inner.dequeue_buffer(&k, global_array_index)?;
     Ok(Buffer::from(v))
   }
+
+  // #[napi]
+  // pub fn get_global_arrays(&self) -> napi::Result<Vec<GlobalArrayAssigned>> {
+  //   let map = self.inner.get_global_arrays();
+  //   let mut vec = Vec::with_capacity(map.len());
+  //
+  //   for (index, size) in map {
+  //     vec.push(GlobalArrayAssigned {
+  //       index: *index,
+  //       size: BigInt::from(*size),
+  //     });
+  //   }
+  //
+  //   Ok(vec)
+  // }
 
   #[napi]
   pub fn get_global_arrays(&self) -> napi::Result<Vec<GlobalArrayAssigned>> {
