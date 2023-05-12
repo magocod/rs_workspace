@@ -3,7 +3,8 @@ use io::Error as IoError;
 use std::collections::HashMap;
 use std::io;
 use std::io::{Read, Write};
-// use std::path::Path;
+use std::os::unix::ffi::OsStrExt;
+use std::path::Path;
 use crate::error::OpenClResult;
 use lazy_static::lazy_static;
 use std::sync::Mutex;
@@ -51,11 +52,13 @@ pub struct OclFile {
 }
 
 impl OclFile {
-    pub fn open(path: String) -> io::Result<OclFile> {
+    pub fn open<P: AsRef<Path>>(path: P) -> io::Result<OclFile> {
         let ocl_fs = GLOBAL_OCL_FS.lock().unwrap();
 
         // TODO open flags
-        match ocl_fs.cache.get(path.as_str()) {
+        let path_b = path.as_ref().as_os_str().as_bytes();
+
+        match ocl_fs.cache.get(String::from_utf8_lossy(path_b).as_ref()) {
             Some(v) => {
                 if ocl_fs.ocl_block.get_global_arrays().get(v).is_some() {
                     return Ok(OclFile {
@@ -73,14 +76,15 @@ impl OclFile {
         ))
     }
 
-    pub fn create(path: String) -> io::Result<OclFile> {
+    pub fn create<P: AsRef<Path>>(path: P) -> io::Result<OclFile> {
         let mut ocl_fs = GLOBAL_OCL_FS.lock().unwrap();
+        let path_str = String::from_utf8_lossy(path.as_ref().as_os_str().as_bytes());
 
-        let index = match ocl_fs.cache.get(path.as_str()) {
+        let index = match ocl_fs.cache.get(path_str.as_ref()) {
             None => ocl_fs.ocl_block.assign_global_array_index(None)?,
             Some(v) => *v,
         };
-        ocl_fs.cache.insert(path, index);
+        ocl_fs.cache.insert(path_str.into(), index);
 
         Ok(OclFile {
             global_array_index: index,

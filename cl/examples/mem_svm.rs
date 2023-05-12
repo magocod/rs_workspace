@@ -22,8 +22,8 @@ kernel void vector_add(global int* A, global int* B, global int* C) {
 
     // printf("global_id %d %d",  i, lid);
 
-    size_t lidx = i * lsize + lid;
-    C[lidx] = 10;
+    // size_t lidx = i * lsize + lid;
+    // C[lidx] = 10;
 
     // Do the operation
     // C[i] = A[i] + B[i];
@@ -120,7 +120,7 @@ fn main() -> Result<()> {
             .set_arg_svm(&b_mem_obj.as_ptr())
             .set_arg_svm(&c_mem_obj.as_mut_ptr())
             .set_global_work_size(LIST_SIZE)
-            .set_local_work_size(64)
+            // .set_local_work_size(64)
             .enqueue_nd_range(&queue)?
     };
 
