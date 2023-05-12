@@ -17,8 +17,9 @@ fn main() -> Result<()> {
         // .stack_size(30 * 1024 * 1024)
         .spawn(move || -> Result<()> {
             // let file = File::open("./cl/examples/files/package.json").expect("File::open");
-            let file = File::open("./cl/examples/files/constants.js").expect("File::open");
+            // let file = File::open("./cl/examples/files/constants.js").expect("File::open");
             // let file = File::open("./cl/examples/files/package-lock.json").expect("File::open");
+            let file = File::open("./cl/examples/files/libaho.rmeta").expect("File::open");
             // let capacity_8_kb = 8192;
             let buff_capacity = MB_1;
             let mut reader = BufReader::with_capacity(buff_capacity, file);
@@ -30,9 +31,18 @@ fn main() -> Result<()> {
                 .enqueue_buffer(&vector_add_kernel, buffer, index)
                 .expect("ocl_block.enqueue_buffer");
             thread::sleep(Duration::from_millis(500));
-            ocl_block
+            let r = ocl_block
                 .dequeue_buffer(&vector_extract_kernel, index)
                 .expect("ocl_block.dequeue_buffer");
+
+            println!(
+                "r.len(): {}",
+                r.len()
+            );
+            // println!(
+            //     "consume arr: {}",
+            //     String::from_utf8(r).expect("from_utf8")
+            // );
 
             // let mut data_file = File::create("./cl/examples/output/constants_mem.js").expect("creation failed");
             // // Write contents to the file

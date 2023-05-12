@@ -22,7 +22,7 @@ use crate::error::{
 
 pub const KB_1: usize = 1024; // 1024
 pub const MB_1: usize = KB_1 * KB_1;
-pub const SIZE: usize = KB_1 * 8;
+pub const SIZE: usize = MB_1 * 6;
 
 pub const LIST_SIZE: usize = SIZE;
 // pub const BLOCKS: usize = 1;
