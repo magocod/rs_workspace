@@ -8,8 +8,9 @@ use opencl3::kernel::{ExecuteKernel, Kernel};
 use opencl3::memory::{Buffer, CL_MEM_READ_ONLY, CL_MEM_WRITE_ONLY};
 use opencl3::program::Program;
 use opencl3::Result;
-use opencl3::types::{CL_BLOCKING, cl_event, cl_int};
+use opencl3::types::{CL_BLOCKING, cl_device_id, cl_event, cl_int};
 use std::ptr;
+use libc::{intptr_t};
 
 const PROGRAM_SOURCE: &str = r#"
 kernel void vector_add(global int* A, global int* B, global int* C) {
@@ -36,10 +37,26 @@ fn main() -> Result<()> {
         // B[i] = i as cl_int;
     }
 
-    let device_id = *get_all_devices(CL_DEVICE_TYPE_GPU)?
+    // let device_id = *get_all_devices(CL_DEVICE_TYPE_GPU)?
+    //     .first()
+    //     .expect("no device found in platform");
+
+    // Find a usable platform and device for this application
+    let platforms = opencl3::platform::get_platforms()?;
+    let platform = platforms.first().expect("no OpenCL platforms");
+    println!("{platform:?}");
+
+    // let device_id = *get_all_devices(CL_DEVICE_TYPE_GPU)?
+    //     .first()
+    //     .expect("no device found in platform");
+    let device_id = *platform
+        .get_devices(CL_DEVICE_TYPE_GPU)?
         .first()
         .expect("no device found in platform");
-    let device = Device::new(device_id);
+
+
+    let device = Device::from(device_id as cl_device_id);
+    println!("{device:?}");
 
     let context = Context::from_device(&device).expect("Context::from_device failed");
     println!("{context:?}");
@@ -91,9 +108,9 @@ fn main() -> Result<()> {
     // Wait for the read_event to complete.
     read_event.wait()?;
 
-    for i in 0..LIST_SIZE {
-        println!("{} + {} = {}", A[i], B[i], results[i]);
-    }
+    // for i in 0..LIST_SIZE {
+    //     println!("{} + {} = {}", A[i], B[i], results[i]);
+    // }
 
     Ok(())
 }

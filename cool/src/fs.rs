@@ -12,6 +12,8 @@ use std::sync::Mutex;
 
 pub type GlobalCacheMap = HashMap<String, GlobalArrayAssigned>;
 
+// it was a mistake to use 2 global variables instead of 1
+
 lazy_static! {
   static ref GLOBAL_OCL_BLOCK: Mutex<OclBlock> = Mutex::new(OclBlock::new(
     DEFAULT_VECTOR_SIZE,
@@ -29,7 +31,13 @@ pub fn write_file_sync(file: String, data: Buffer) -> napi::Result<()> {
   let mut global_cache = GLOBAL_CACHE.lock().unwrap();
 
   let size = BigInt::from(data.len() as u64);
-  let index = ocl_block.enqueue_buffer(data, None)?;
+
+  let index = match global_cache.get(file.as_str()) {
+    None => ocl_block.assign_global_array_index()?,
+    Some(v) => v.index,
+  };
+
+  let index = ocl_block.enqueue_buffer(data, Some(index))?;
 
   global_cache.insert(file, GlobalArrayAssigned { index, size });
 
@@ -128,4 +136,11 @@ pub fn cache() -> napi::Result<GlobalCacheMap> {
 pub fn ocl_cache() -> napi::Result<Vec<GlobalArrayAssigned>> {
   let ocl_block = GLOBAL_OCL_BLOCK.lock().unwrap();
   ocl_block.get_global_arrays()
+}
+
+#[napi]
+pub fn initialize() -> napi::Result<()> {
+  let ocl_block = GLOBAL_OCL_BLOCK.lock().unwrap();
+  ocl_block.initialize()?;
+  Ok(())
 }

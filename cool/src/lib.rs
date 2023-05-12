@@ -6,7 +6,7 @@ extern crate napi_derive;
 use cl::ocl_v5::{OpenClBlock, LIST_SIZE, TOTAL_GLOBAL_ARRAY};
 use napi::bindgen_prelude::{BigInt, Buffer};
 
-pub mod fs;
+pub mod fs_v2;
 pub mod global;
 
 #[napi]
@@ -104,6 +104,11 @@ impl OclBlock {
     }
 
     Ok(vec)
+  }
+
+  #[napi]
+  pub fn assign_global_array_index(&mut self) -> napi::Result<u32> {
+    Ok(self.inner.assign_global_array_index(None)?)
   }
 }
 

@@ -17,6 +17,7 @@
     "chai": "^4.3.7",
     "mocha": "^10.2.0",
     "rimraf": "^5.0.0",
+    "tinybench": "^2.5.0",
     "ts-node": "^10.9.1",
     "typescript": "^5.0.4"
   },
@@ -34,8 +35,15 @@
     "test": "ava",
     "test:mocha": "mocha -r ts-node/register \"test/**/*.spec.ts\" --recursive",
     "test:mocha:file": "mocha -r ts-node/register test/opencl_buffer.spec.ts",
+    "bench:example": "ts-node \"benches/example.bench.ts\"",
+    "bench:fs_write": "ts-node \"benches/fs_write.bench.ts\"",
+    "bench:suite:example": "node \"benches/e.bench.js\"",
+    "bench:suite:fs": "node \"benches/fs.suite.js\"",
     "universal": "napi universal",
     "version": "napi version"
   },
-  "packageManager": "yarn@3.5.1"
+  "packageManager": "yarn@3.5.1",
+  "dependencies": {
+    "benny": "^3.7.1"
+  }
 }

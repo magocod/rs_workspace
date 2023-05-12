@@ -6,8 +6,8 @@
 export function writeFileSync(file: string, data: Buffer): void
 export function readFileSynchronous(file: string): Buffer
 export function existsSynchronous(file: string): boolean
-export function cache(): GlobalCacheMap
-export function oclCache(): Array<GlobalArrayAssigned>
+export function cache(): void
+export function initialize(): void
 export function addGlobalVec(a: number): void
 export function showGlobalVec(): void
 export function getGlobalVec(): Array<number>
@@ -30,4 +30,5 @@ export class OclBlock {
   enqueueBuffer(jsBuffer: Buffer, globalArrayIndex?: number | undefined | null): number
   dequeueBuffer(globalArrayIndex: number): Buffer
   getGlobalArrays(): Array<GlobalArrayAssigned>
+  assignGlobalArrayIndex(): number
 }

@@ -1,0 +1,27 @@
+{
+  "name": "fs",
+  "date": "2023-05-11T22:12:27.330Z",
+  "version": "1.0.0",
+  "results": [
+    {
+      "name": "Reduce two elements",
+      "ops": 185570979,
+      "margin": 0.59,
+      "percentSlower": 0
+    },
+    {
+      "name": "Reduce five elements",
+      "ops": 163914750,
+      "margin": 0.37,
+      "percentSlower": 11.67
+    }
+  ],
+  "fastest": {
+    "name": "Reduce two elements",
+    "index": 0
+  },
+  "slowest": {
+    "name": "Reduce five elements",
+    "index": 1
+  }
+}

@@ -1,14 +1,13 @@
 #![allow(non_camel_case_types, non_snake_case)]
 
 use cl::hello;
-use cl3::device::CL_DEVICE_TYPE_GPU;
-use cl3::types::{cl_event, cl_int, CL_BLOCKING};
 use opencl3::command_queue::{CommandQueue, CL_QUEUE_PROFILING_ENABLE};
 use opencl3::context::Context;
-use opencl3::device::{get_all_devices, Device};
+use opencl3::device::{get_all_devices, Device, CL_DEVICE_TYPE_GPU};
 use opencl3::kernel::{ExecuteKernel, Kernel};
 use opencl3::memory::{Buffer, CL_MEM_READ_ONLY, CL_MEM_WRITE_ONLY};
 use opencl3::program::{Program, CL_STD_2_0};
+use opencl3::types::{cl_event, cl_int, CL_BLOCKING};
 use opencl3::Result;
 use std::time::Duration;
 use std::{ptr, thread};
@@ -32,6 +31,7 @@ const GLOBAL_PROGRAM_SOURCE: &str = r#"
 __global int globalA;
 // __global int* globalB;
 __global int myNumbers[20971520];
+// __global int myNumbers[20971520] = { [0 ... 20971519] = -1 };
 
 struct myStructure {
     int myNum;
@@ -45,7 +45,7 @@ kernel void update_global() {
     int i = get_global_id(0);
 
     globalA = 75;
-    myNumbers[i] = 76;
+    // myNumbers[i] = 76;
 
     struct myStructure s2 = { 14, 'C' };
     myStructures[i] = s2;
@@ -158,9 +158,9 @@ fn main() -> Result<()> {
     // Wait for the read_event to complete.
     read_event.wait()?;
 
-    for i in 0..LIST_SIZE {
-        println!("{} + {} = {}", A[i], B[i], results[i]);
-    }
+    // for i in 0..LIST_SIZE {
+    //     println!("{} + {} = {}", A[i], B[i], results[i]);
+    // }
 
     let global_kernel_event = unsafe {
         ExecuteKernel::new(&global_kernel)

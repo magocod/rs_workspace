@@ -1,6 +1,8 @@
+use io::Error as IoError;
 use napi::{Error as NapiError, Status};
 use opencl3::error_codes::ClError;
 use opencl3::types::cl_int;
+use std::io;
 
 // custom cl error codes
 pub const INVALID_GLOBAL_ARRAY_ID: cl_int = -200;
@@ -14,6 +16,7 @@ pub enum OpenclError {
     CustomOpenCl(cl_int), // custom cl error code
     Other,
     // Napi(NapiError)
+    // Io(String)
 }
 
 pub type OpenClResult<T> = Result<T, OpenclError>;
@@ -28,6 +31,55 @@ impl std::fmt::Display for OpenclError {
             OpenclError::Other => write!(f, "other error"),
             // OpenclError::Napi(v) => write!(f, "{}", v),
         }
+    }
+}
+
+impl From<IoError> for OpenclError {
+    fn from(_: IoError) -> Self {
+        // match value.kind() {
+        //     ErrorKind::NotFound => {}
+        //     ErrorKind::PermissionDenied => {}
+        //     ErrorKind::ConnectionRefused => {}
+        //     ErrorKind::ConnectionReset => {}
+        //     ErrorKind::HostUnreachable => {}
+        //     ErrorKind::NetworkUnreachable => {}
+        //     ErrorKind::ConnectionAborted => {}
+        //     ErrorKind::NotConnected => {}
+        //     ErrorKind::AddrInUse => {}
+        //     ErrorKind::AddrNotAvailable => {}
+        //     ErrorKind::NetworkDown => {}
+        //     ErrorKind::BrokenPipe => {}
+        //     ErrorKind::AlreadyExists => {}
+        //     ErrorKind::WouldBlock => {}
+        //     ErrorKind::NotADirectory => {}
+        //     ErrorKind::IsADirectory => {}
+        //     ErrorKind::DirectoryNotEmpty => {}
+        //     ErrorKind::ReadOnlyFilesystem => {}
+        //     ErrorKind::FilesystemLoop => {}
+        //     ErrorKind::StaleNetworkFileHandle => {}
+        //     ErrorKind::InvalidInput => {}
+        //     ErrorKind::InvalidData => {}
+        //     ErrorKind::TimedOut => {}
+        //     ErrorKind::WriteZero => {}
+        //     ErrorKind::StorageFull => {}
+        //     ErrorKind::NotSeekable => {}
+        //     ErrorKind::FilesystemQuotaExceeded => {}
+        //     ErrorKind::FileTooLarge => {}
+        //     ErrorKind::ResourceBusy => {}
+        //     ErrorKind::ExecutableFileBusy => {}
+        //     ErrorKind::Deadlock => {}
+        //     ErrorKind::CrossesDevices => {}
+        //     ErrorKind::TooManyLinks => {}
+        //     ErrorKind::InvalidFilename => {}
+        //     ErrorKind::ArgumentListTooLong => {}
+        //     ErrorKind::Interrupted => {}
+        //     ErrorKind::Unsupported => {}
+        //     ErrorKind::UnexpectedEof => {}
+        //     ErrorKind::OutOfMemory => {}
+        //     ErrorKind::Other => {}
+        //     ErrorKind::Uncategorized => {}
+        // }
+        OpenclError::Other
     }
 }
 
@@ -83,6 +135,21 @@ impl From<OpenclError> for NapiError {
                 Self::new(Status::Unknown, format!("custom opencl error code: {v}"))
             }
             OpenclError::Other => Self::new(Status::Unknown, format!("unknown opencl error")),
+        }
+    }
+}
+
+impl From<OpenclError> for IoError {
+    fn from(e: OpenclError) -> Self {
+        match e {
+            OpenclError::OpenCl(v) => {
+                Self::new(io::ErrorKind::Other, format!("opencl error code: {v}"))
+            }
+            OpenclError::CustomOpenCl(v) => Self::new(
+                io::ErrorKind::Other,
+                format!("custom opencl error code: {v}"),
+            ),
+            OpenclError::Other => Self::new(io::ErrorKind::Other, format!("unknown opencl error")),
         }
     }
 }

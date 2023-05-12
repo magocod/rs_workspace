@@ -1,0 +1,27 @@
+{
+  "name": "fs",
+  "date": "2023-05-11T22:15:40.543Z",
+  "version": "1.0.0",
+  "results": [
+    {
+      "name": "fs.writeFileSync",
+      "ops": 21101,
+      "margin": 0.99,
+      "percentSlower": 0
+    },
+    {
+      "name": "oclFs.writeFileSync",
+      "ops": 3775,
+      "margin": 0.29,
+      "percentSlower": 82.11
+    }
+  ],
+  "fastest": {
+    "name": "fs.writeFileSync",
+    "index": 0
+  },
+  "slowest": {
+    "name": "oclFs.writeFileSync",
+    "index": 1
+  }
+}

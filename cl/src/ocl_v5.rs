@@ -15,18 +15,18 @@ use crate::error::{
     OpenClResult,
     OpenclError,
     // GLOBAL_ARRAY_ID_ASSIGNED,
-    INVALID_BUFFER_LEN,
+    // INVALID_BUFFER_LEN,
     INVALID_GLOBAL_ARRAY_ID,
     NO_GLOBAL_VECTORS_TO_ASSIGN,
 };
 
 pub const KB_1: usize = 1024; // 1024
 pub const MB_1: usize = KB_1 * KB_1;
-pub const SIZE: usize = MB_1 * 4;
+pub const SIZE: usize = KB_1 * 8;
 
 pub const LIST_SIZE: usize = SIZE;
 // pub const BLOCKS: usize = 1;
-pub const TOTAL_GLOBAL_ARRAY: usize = 32;
+pub const TOTAL_GLOBAL_ARRAY: usize = 128;
 pub const CAPACITY_GLOBAL_ARRAY: usize = SIZE;
 
 pub const KERNEL_NAME: &str = "vector_add";
@@ -94,14 +94,14 @@ impl OpenClBlock {
     pub fn create_vector_add_kernel(&self) -> Kernel {
         let vector_add_kernel =
             Kernel::create(&self.program, KERNEL_NAME).expect("Kernel::create failed");
-        println!("{vector_add_kernel:?}");
+        // println!("{vector_add_kernel:?}");
         vector_add_kernel
     }
 
     pub fn create_vector_extract_kernel(&self) -> Kernel {
         let vector_extract_kernel =
             Kernel::create(&self.program, EXTRACT_KERNEL_NAME).expect("Kernel::create failed");
-        println!("{vector_extract_kernel:?}");
+        // println!("{vector_extract_kernel:?}");
         vector_extract_kernel
     }
 
@@ -112,11 +112,11 @@ impl OpenClBlock {
         global_array_index: u32,
     ) -> OpenClResult<()> {
         // println!("LIST_SIZE {LIST_SIZE}");
-        if buf.len() > self.vector_size {
-            println!("buffer too large");
-            // return Err(ClError(INVALID_BUFFER_LEN));
-            return Err(OpenclError::CustomOpenCl(INVALID_BUFFER_LEN));
-        }
+        // if buf.len() > self.vector_size {
+        //     println!("buffer too large");
+        //     // return Err(ClError(INVALID_BUFFER_LEN));
+        //     return Err(OpenclError::CustomOpenCl(INVALID_BUFFER_LEN));
+        // }
 
         if global_array_index > self.global_array_count as u32 {
             println!("global_array_index not valid");
@@ -157,8 +157,14 @@ impl OpenClBlock {
 
         let mut input = vec![-1; self.vector_size];
 
-        for (i, v) in buf.iter().enumerate() {
-            input[i] = *v as cl_int;
+        if self.vector_size > buf.len() {
+            for (i, v) in buf.iter().enumerate() {
+                input[i] = *v as cl_int;
+            }
+        } else {
+            for i in 0..self.vector_size {
+                input[i] = buf[i] as cl_int;
+            }
         }
 
         let _write_event = unsafe {
@@ -267,7 +273,8 @@ impl OpenClBlock {
         //     String::from_utf8(output_vec.clone()).expect("from_utf8")
         // );
 
-        println!("output_vec len {}", output_vec.len());
+        // println!("output_vec len {}", output_vec.len());
+        // println!("output_vec {:?}", output_vec);
 
         // Ok(output)
         Ok(output_vec)
@@ -276,7 +283,7 @@ impl OpenClBlock {
     pub fn get_global_array_index(&self) -> OpenClResult<u32> {
         let v = &mut self.global_arrays.keys().collect::<Vec<&u32>>();
         v.sort();
-        println!("get_global_array_index {v:?}");
+        // println!("get_global_array_index {v:?}");
         match v.pop() {
             Some(i) => {
                 if *i > self.global_array_count as u32 {
@@ -288,9 +295,18 @@ impl OpenClBlock {
         }
     }
 
-    pub fn assign_global_array_index(&mut self) -> OpenClResult<u32> {
+    pub fn assign_global_array_index(&mut self, kernel: Option<Kernel>) -> OpenClResult<u32> {
         let i = self.get_global_array_index()?;
-        self.global_arrays.insert(i, 0);
+        // if program opencl initialize with -1
+        // self.global_arrays.insert(i, 0);
+
+        // if program opencl initialize with 0
+        // fill opencl array with -1, from a kernel call
+        let k = match kernel {
+            None => self.create_vector_add_kernel(),
+            Some(v) => v,
+        };
+        self.enqueue_buffer(&k, &[], i)?;
         Ok(i)
     }
 
@@ -332,11 +348,19 @@ pub fn gen_vector_program_source(arrays: usize, capacity: usize) -> String {
     );
 
     for i in 0..arrays {
-        // global_array
         let global_arr = format!(
             "
     __global int myNumbers{i}[{capacity}];"
         );
+        //     let initialize =  "= { [0 ... limit] = -1 };"
+        //         .replace(
+        //             "limit",
+        //             (capacity - 1).to_string().as_str()
+        //         );
+        //     let global_arr = format!(
+        //         "
+        // __global int myNumbers{i}[{capacity}] {initialize}"
+        //     );
         global_arrays.push_str(&global_arr);
 
         // vector_add
