@@ -21,11 +21,13 @@ pub fn hello() -> String {
 }
 
 pub mod error;
+
 pub mod ocl_v1;
 pub mod ocl_v2;
 pub mod ocl_v3;
 pub mod ocl_v4;
 pub mod ocl_v5;
+pub mod ocl_v6;
 
 pub mod ocl_fs;
 

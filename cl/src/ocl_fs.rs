@@ -1,12 +1,12 @@
+use crate::error::OpenClResult;
 use crate::ocl_v5::{OpenClBlock, LIST_SIZE, TOTAL_GLOBAL_ARRAY};
 use io::Error as IoError;
+use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::io;
 use std::io::{Read, Write};
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
-use crate::error::OpenClResult;
-use lazy_static::lazy_static;
 use std::sync::Mutex;
 
 lazy_static! {
@@ -25,6 +25,8 @@ pub fn ocl_cache() -> OpenClResult<()> {
     let ocl_fs = GLOBAL_OCL_FS.lock().unwrap();
     println!("{:#?}", ocl_fs.cache);
     println!("{:#?}", ocl_fs.ocl_block.get_global_arrays());
+    println!("path total {}", ocl_fs.ocl_block.get_global_arrays().len());
+    println!("index total {}", ocl_fs.ocl_block.get_global_arrays().len());
     Ok(())
 }
 
@@ -44,6 +46,32 @@ impl OclFs {
             cache: HashMap::new(),
         }
     }
+}
+
+pub fn read<P: AsRef<Path>>(path: P) -> io::Result<Vec<u8>> {
+    fn inner(path: &Path) -> io::Result<Vec<u8>> {
+        let file = OclFile::open(path)?;
+        // TODO file metadata
+        Ok(file.read_to_vec()?)
+    }
+    inner(path.as_ref())
+}
+
+pub fn read_to_string<P: AsRef<Path>>(path: P) -> io::Result<String> {
+    fn inner(path: &Path) -> io::Result<String> {
+        let file = OclFile::open(path)?;
+        // TODO file metadata
+        let st = String::from_utf8(file.read_to_vec()?).unwrap();
+        Ok(st)
+    }
+    inner(path.as_ref())
+}
+
+pub fn write<P: AsRef<Path>, C: AsRef<[u8]>>(path: P, contents: C) -> io::Result<()> {
+    fn inner(path: &Path, contents: &[u8]) -> io::Result<()> {
+        OclFile::create(path)?.write_all(contents)
+    }
+    inner(path.as_ref(), contents.as_ref())
 }
 
 #[derive(Debug, Clone)]
@@ -93,6 +121,15 @@ impl OclFile {
 
     pub fn global_array_index(&self) -> u32 {
         self.global_array_index
+    }
+
+    fn read_to_vec(&self) -> io::Result<Vec<u8>> {
+        let ocl_fs = GLOBAL_OCL_FS.lock().unwrap();
+        let k = ocl_fs.ocl_block.create_vector_extract_kernel();
+        let v = ocl_fs
+            .ocl_block
+            .dequeue_buffer(&k, self.global_array_index)?;
+        Ok(v)
     }
 }
 

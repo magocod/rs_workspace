@@ -1,22 +1,32 @@
+use cl::ocl_fs;
+use cl::ocl_fs::OclFile;
+use std::fs;
 use std::fs::File;
 use std::io::Write;
-use std::{env, fs};
 
 fn main() {
-    println!("{:?}", env::current_dir().unwrap());
+    let b = b"Hello, World!";
+    let path_create = "./cl/examples/output/data.txt";
+    let path_fs_create = "./cl/examples/output/fs_write.txt";
+    let path_fs_delete = "./cl/examples/output/del.txt";
+
     // Create a file
-    let mut data_file = File::create("./cl/examples/output/data.txt").expect("creation failed");
+    let mut data_file = File::create(path_create).expect("creation failed");
 
     // Write contents to the file
-    data_file
-        .write("Hello, World!".as_bytes())
-        .expect("write failed");
+    data_file.write(b).expect("write failed");
 
-    File::create("./cl/examples/output/del.txt").expect("creation failed");
-    fs::remove_file("./cl/examples/output/del.txt").unwrap();
+    File::create(path_fs_delete).expect("creation failed");
+    fs::remove_file(path_fs_delete).unwrap();
 
-    // File::create("./cl/examples/output/data.txt").expect("creation failed");
-    // File::create("./cl/examples/output/data.txt").expect("creation failed");
+    fs::write(path_fs_create, b).unwrap();
 
-    println!("Created a file data.txt");
+    // opencl
+    let mut f = OclFile::create(path_create).unwrap();
+    f.write(b).unwrap();
+
+    ocl_fs::write(path_fs_create, b).unwrap();
+    ocl_fs::write(path_fs_create, "update").unwrap();
+
+    ocl_fs::ocl_cache().unwrap();
 }

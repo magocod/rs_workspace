@@ -22,11 +22,11 @@ use crate::error::{
 
 pub const KB_1: usize = 1024; // 1024
 pub const MB_1: usize = KB_1 * KB_1;
-pub const SIZE: usize = KB_1 * 8;
+pub const SIZE: usize = KB_1 * 1;
 
 pub const LIST_SIZE: usize = SIZE;
 // pub const BLOCKS: usize = 1;
-pub const TOTAL_GLOBAL_ARRAY: usize = 128;
+pub const TOTAL_GLOBAL_ARRAY: usize = 2500;
 pub const CAPACITY_GLOBAL_ARRAY: usize = SIZE;
 
 pub const KERNEL_NAME: &str = "vector_add";
@@ -64,7 +64,7 @@ impl OpenClBlock {
                 .expect("CommandQueue::create_default failed");
         println!("{queue:?}");
 
-        let program_source = gen_vector_program_source(TOTAL_GLOBAL_ARRAY, CAPACITY_GLOBAL_ARRAY);
+        let program_source = gen_vector_program_source(TOTAL_GLOBAL_ARRAY, CAPACITY_GLOBAL_ARRAY, false);
         // println!("{program_source}");
         let program =
             Program::create_and_build_from_source(&context, program_source.as_str(), CL_STD_2_0)
@@ -319,103 +319,170 @@ impl OpenClBlock {
     }
 }
 
-pub fn gen_vector_program_source(arrays: usize, capacity: usize) -> String {
-    let mut global_arrays = String::from(
-        "
-        ",
-    );
+const TEMPLATE_SOURCE: &str = r#"
+    __GLOBAL_ARRAYS
 
-    let mut vector_add_fn = String::from(
-        "
     kernel void vector_add(global int* A, global int* D) {
 
         // Get the index of the current element
         int i = get_global_id(0);
 
+        // Do the operation
         switch (D[i]) {
-        ",
-    );
+            VECTOR_ADD_SWITCH
+        }
+    }
 
-    let mut vector_extract_fn = String::from(
-        "
     kernel void vector_extract(global int* C, global int* D) {
 
         // Get the index of the current element
         int i = get_global_id(0);
 
         switch (D[i]) {
-        ",
-    );
+            VECTOR_EXTRACT_SWITCH
+        }
+    }
+    "#;
+
+///   generate opencl program
+///
+///     ```c
+///     __global int myNumbers0[2];
+///     __global int myNumbers1[2];
+///     __global int myNumbersN[N];
+///
+///
+///     kernel void vector_add(global int* A, global int* D) {
+///
+///         // Get the index of the current element
+///         int i = get_global_id(0);
+///
+///         // Do the operation
+///         switch (D[i]) {
+///
+///             case 0:
+///               myNumbers0[i] = A[i];
+///               break;
+///             case 1:
+///               myNumbers1[i] = A[i];
+///               break;
+///             case N:
+///               myNumbersN[i] = A[i];
+///               break;
+///             ...
+///         }
+///     }
+///
+///     kernel void vector_extract(global int* C, global int* D) {
+///
+///         // Get the index of the current element
+///         int i = get_global_id(0);
+///
+///         switch (D[i]) {
+///
+///             case 0:
+///               C[i] = myNumbers0[i];
+///               break;
+///             case 1:
+///               C[i] = myNumbers1[i];
+///               break;
+///             case N:
+///               myNumbersN[i] = A[i];
+///               break;
+///             ...
+///         }
+///     }
+///     ```
+///
+pub fn gen_vector_program_source(
+    arrays: usize,
+    capacity: usize,
+    initial_value: bool,
+) -> String {
+    let mut global_arrays = String::from("");
+    let mut vector_add_switch = String::from("");
+    let mut vector_extract_switch = String::from("");
 
     for i in 0..arrays {
-        let global_arr = format!(
-            "
+        // global arrays
+        let global_arr = if initial_value {
+            // slow compilation
+            let initialize =
+                "= { [0 ... limit] = -1 };".replace("limit", (capacity - 1).to_string().as_str());
+            format!("
+    __global int myNumbers{i}[{capacity}] {initialize}"
+            )
+        } else {
+            format!("
     __global int myNumbers{i}[{capacity}];"
-        );
-        //     let initialize =  "= { [0 ... limit] = -1 };"
-        //         .replace(
-        //             "limit",
-        //             (capacity - 1).to_string().as_str()
-        //         );
-        //     let global_arr = format!(
-        //         "
-        // __global int myNumbers{i}[{capacity}] {initialize}"
-        //     );
+            )
+        };
         global_arrays.push_str(&global_arr);
 
         // vector_add
-        // let v_add = format!("
-        // myNumbers{i}[i] = A[i] + {i};"
-        // );
-        let v_add = format!(
-            "
+        let v_add = format!("
             case {i}:
               myNumbers{i}[i] = A[i];
               break;"
         );
-        vector_add_fn.push_str(&v_add);
+        vector_add_switch.push_str(&v_add);
 
         // vector_extract
-        let v_ext = format!(
-            "
+        let v_ext = format!("
             case {i}:
               C[i] = myNumbers{i}[i];
               break;"
         );
-        vector_extract_fn.push_str(&v_ext);
+        vector_extract_switch.push_str(&v_ext);
     }
 
-    let end_switch = r#"
-        }"#;
-
-    let end_fn = r#"
-    }"#;
-
-    let body = format!(
-        "
-    {vector_add_fn}
-    {end_switch}
-    {end_fn}
-    {vector_extract_fn}
-    {end_switch}
-    {end_fn}
-    "
-    );
-
-    format!("{global_arrays}{body}")
+    TEMPLATE_SOURCE
+        .replace("__GLOBAL_ARRAYS", &global_arrays)
+        .replace("VECTOR_ADD_SWITCH", &vector_add_switch)
+        .replace("VECTOR_EXTRACT_SWITCH", &vector_extract_switch)
 }
 
-pub fn visit_dirs(dir: &Path, vec: &mut Vec<DirEntry>) -> io::Result<()> {
+pub fn load_dirs(dir: &Path, vec: &mut Vec<DirEntry>) -> io::Result<()> {
     if dir.is_dir() {
         for entry in fs::read_dir(dir)? {
             let entry = entry?;
             let path = entry.path();
             if path.is_dir() {
-                visit_dirs(&path, vec)?;
+                load_dirs(&path, vec)?;
             } else {
-                vec.push(entry);
+                let size = entry.metadata().unwrap().len() as f64;
+                let size_mb = size / (1024 * 1024) as f64;
+
+                let path = entry.path();
+                let path_str = path.to_str().unwrap();
+
+                // println!("{}", path_str);
+                // println!("size {size} bytes -> {} mb", size_mb);
+
+                // if size_mb > 0.9 {
+                //     println!("{}", path_str);
+                //     println!("size {size} bytes -> {} mb", size_mb);
+                //     vec.push(entry);
+                // }
+                if size < 1024 as f64 {
+                    println!("{}", path_str);
+                    println!("size {size} bytes -> {} mb", size_mb);
+                    vec.push(entry);
+                }
             }
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn generate_program_source() {
+        let _ = gen_vector_program_source(2, 2, false);
+        // println!("{result}");
+        assert_eq!(1, 1);
+    }
 }

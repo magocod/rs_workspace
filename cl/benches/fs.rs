@@ -2,9 +2,9 @@
 
 use cl::ocl_fs::{ocl_cache, ocl_initialize, OclFile};
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
-use std::{env};
 
 fn generate_path(p: &str) -> String {
     let mut path = env::current_dir().unwrap();
@@ -25,9 +25,7 @@ fn fs_open_benchmark(c: &mut Criterion) {
     let path = generate_path("resources/to_open.js");
     prepare_opencl(&path);
 
-    c.bench_function("File::open", |b| {
-        b.iter(|| File::open(black_box(&path)))
-    });
+    c.bench_function("File::open", |b| b.iter(|| File::open(black_box(&path))));
     c.bench_function("OclFile::open", |b| {
         b.iter(|| OclFile::open(black_box(&path)))
     });
@@ -66,9 +64,7 @@ fn fs_read_benchmark(c: &mut Criterion) {
     let path = generate_path("resources/to_read.js");
     prepare_opencl(&path);
 
-    c.bench_function("File::read", |b| {
-        b.iter(|| fs_read(black_box(&path)))
-    });
+    c.bench_function("File::read", |b| b.iter(|| fs_read(black_box(&path))));
     c.bench_function("OclFile::read", |b| {
         b.iter(|| ocl_fs_read(black_box(&path)))
     });

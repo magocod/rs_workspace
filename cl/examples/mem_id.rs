@@ -1,16 +1,16 @@
 #![allow(non_camel_case_types, non_snake_case)]
 
 use cl::hello;
+use libc::intptr_t;
 use opencl3::command_queue::{CommandQueue, CL_QUEUE_PROFILING_ENABLE};
 use opencl3::context::Context;
 use opencl3::device::{get_all_devices, Device, CL_DEVICE_TYPE_GPU};
 use opencl3::kernel::{ExecuteKernel, Kernel};
 use opencl3::memory::{Buffer, CL_MEM_READ_ONLY, CL_MEM_WRITE_ONLY};
 use opencl3::program::Program;
+use opencl3::types::{cl_device_id, cl_event, cl_int, CL_BLOCKING};
 use opencl3::Result;
-use opencl3::types::{CL_BLOCKING, cl_device_id, cl_event, cl_int};
 use std::ptr;
-use libc::{intptr_t};
 
 const PROGRAM_SOURCE: &str = r#"
 kernel void vector_add(global int* A, global int* B, global int* C) {
@@ -53,7 +53,6 @@ fn main() -> Result<()> {
         .get_devices(CL_DEVICE_TYPE_GPU)?
         .first()
         .expect("no device found in platform");
-
 
     let device = Device::from(device_id as cl_device_id);
     println!("{device:?}");
