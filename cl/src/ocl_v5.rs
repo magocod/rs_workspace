@@ -64,7 +64,8 @@ impl OpenClBlock {
                 .expect("CommandQueue::create_default failed");
         println!("{queue:?}");
 
-        let program_source = gen_vector_program_source(TOTAL_GLOBAL_ARRAY, CAPACITY_GLOBAL_ARRAY, false);
+        let program_source =
+            gen_vector_program_source(TOTAL_GLOBAL_ARRAY, CAPACITY_GLOBAL_ARRAY, false);
         // println!("{program_source}");
         let program =
             Program::create_and_build_from_source(&context, program_source.as_str(), CL_STD_2_0)
@@ -394,11 +395,7 @@ const TEMPLATE_SOURCE: &str = r#"
 ///     }
 ///     ```
 ///
-pub fn gen_vector_program_source(
-    arrays: usize,
-    capacity: usize,
-    initial_value: bool,
-) -> String {
+pub fn gen_vector_program_source(arrays: usize, capacity: usize, initial_value: bool) -> String {
     let mut global_arrays = String::from("");
     let mut vector_add_switch = String::from("");
     let mut vector_extract_switch = String::from("");
@@ -409,18 +406,21 @@ pub fn gen_vector_program_source(
             // slow compilation
             let initialize =
                 "= { [0 ... limit] = -1 };".replace("limit", (capacity - 1).to_string().as_str());
-            format!("
+            format!(
+                "
     __global int myNumbers{i}[{capacity}] {initialize}"
             )
         } else {
-            format!("
+            format!(
+                "
     __global int myNumbers{i}[{capacity}];"
             )
         };
         global_arrays.push_str(&global_arr);
 
         // vector_add
-        let v_add = format!("
+        let v_add = format!(
+            "
             case {i}:
               myNumbers{i}[i] = A[i];
               break;"
@@ -428,7 +428,8 @@ pub fn gen_vector_program_source(
         vector_add_switch.push_str(&v_add);
 
         // vector_extract
-        let v_ext = format!("
+        let v_ext = format!(
+            "
             case {i}:
               C[i] = myNumbers{i}[i];
               break;"

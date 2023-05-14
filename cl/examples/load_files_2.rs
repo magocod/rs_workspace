@@ -1,12 +1,12 @@
-use cl::ocl_fs;
-use cl::ocl_fs::{ocl_cache, ocl_initialize};
-use cl::ocl_v5::load_dirs;
+use cl::ocl_fs_2;
+use cl::ocl_fs_2::{ocl_cache, ocl_initialize};
+use cl::utils::load_dirs;
 use std::path::Path;
 use std::time::Duration;
 use std::{fs, thread};
 
 fn main() {
-    ocl_initialize(true);
+    ocl_initialize();
 
     let path = Path::new("./cool/node_modules");
     let mut v = vec![];
@@ -18,12 +18,17 @@ fn main() {
         let path = entry.path();
         let path_v = fs::read(path.as_path()).unwrap();
 
-        match ocl_fs::write(path, path_v) {
+        if path_v.len() > 1024 {
+            println!("{path:?}, len {}", path_v.len())
+        }
+
+        match ocl_fs_2::write(path, path_v) {
             Ok(_) => {
                 // pass
             }
-            Err(_) => {
-                println!("write error i: {i}")
+            Err(e) => {
+                println!("write error i: {i}");
+                println!("write error i: {e:?}");
             }
         }
     }

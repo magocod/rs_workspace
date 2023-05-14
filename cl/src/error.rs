@@ -9,6 +9,7 @@ pub const INVALID_GLOBAL_ARRAY_ID: cl_int = -200;
 pub const INVALID_BUFFER_LEN: cl_int = -201;
 pub const GLOBAL_ARRAY_ID_ASSIGNED: cl_int = -202;
 pub const NO_GLOBAL_VECTORS_TO_ASSIGN: cl_int = -203;
+pub const INVALID_KERNEL_BLOCK_NAME: cl_int = -204;
 
 #[derive(Debug)]
 pub enum OpenclError {
@@ -16,7 +17,7 @@ pub enum OpenclError {
     CustomOpenCl(cl_int), // custom cl error code
     Other,
     // Napi(NapiError)
-    // Io(String)
+    // Io(String)w
 }
 
 pub type OpenClResult<T> = Result<T, OpenclError>;
