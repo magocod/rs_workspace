@@ -31,6 +31,8 @@ async function findDirFiles(folderName, from) {
         if (size > 0.9) {
           salesFiles.push(`${fullPath} ${size}`);
         }
+
+        // salesFiles.push(`${fullPath} ${size}`);
       }
     }
   }
@@ -41,7 +43,7 @@ async function findDirFiles(folderName, from) {
 }
 
 async function main() {
-  const baseFolder = 'cool/.yarn';
+  const baseFolder = 'tmp/node_modules';
   const p = path.resolve(__dirname, baseFolder);
   console.log('base folder: ', p);
   // const salesFiles = await findDirFiles(path.join(__dirname, "tmp"));

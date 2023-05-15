@@ -29,6 +29,17 @@ pub fn ocl_cache() -> OpenClResult<()> {
     Ok(())
 }
 
+pub fn ocl_summary() -> OpenClResult<()> {
+    let ocl_fs = GLOBAL_OCL_FS.lock().unwrap();
+    let v = ocl_fs.ocl_block.get_global_array_summary();
+    println!("{:#?}", v);
+
+    let t = v.iter().map(|x| x.assigned).collect::<Vec<u64>>();
+    let r = t.into_iter().reduce(|acc, x| acc + x).unwrap();
+    println!("assigned {r}");
+    Ok(())
+}
+
 pub type FileCacheMap = HashMap<String, String>;
 
 #[derive(Debug)]

@@ -32,6 +32,8 @@ pub mod ocl_v6;
 pub mod ocl_fs;
 pub mod ocl_fs_2;
 
+pub mod ocl_fs_config;
+
 pub mod process;
 pub mod server;
 pub mod utils;

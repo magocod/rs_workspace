@@ -1,4 +1,7 @@
-use crate::error::{OpenClResult, OpenclError, INVALID_BUFFER_LEN, INVALID_GLOBAL_ARRAY_ID, NO_GLOBAL_VECTORS_TO_ASSIGN, INVALID_KERNEL_BLOCK_NAME};
+use crate::error::{
+    OpenClResult, OpenclError, INVALID_BUFFER_LEN, INVALID_GLOBAL_ARRAY_CONFIGURATION,
+    INVALID_GLOBAL_ARRAY_ID, INVALID_KERNEL_BLOCK_NAME, NO_GLOBAL_VECTORS_TO_ASSIGN,
+};
 use opencl3::command_queue::{CommandQueue, CL_QUEUE_PROFILING_ENABLE};
 use opencl3::context::Context;
 use opencl3::device::{get_all_devices, Device, CL_DEVICE_TYPE_GPU};
@@ -26,38 +29,34 @@ pub const VECTOR_EXTRACT_KERNEL_NAME: &str = "vector_extract";
 
 #[derive(Debug, Clone)]
 pub struct GlobalArrayBlockConfig {
-    global_array_capacity: usize,
-    global_array_count: usize,
-    negative_initial_value: bool,
+    pub global_array_capacity: usize,
+    pub global_array_count: usize,
+    pub negative_initial_value: bool,
 }
 
 pub type BlockConfigMap = HashMap<&'static str, GlobalArrayBlockConfig>;
 
-pub fn default_config() -> BlockConfigMap {
-    let mut m = HashMap::new();
-    m.insert(
-        KB_1_S,
-        GlobalArrayBlockConfig {
-            global_array_capacity: KB_1,
-            global_array_count: 2500,
-            negative_initial_value: false,
-        },
-    );
-    m.insert(
-        MB_1_S,
-        GlobalArrayBlockConfig {
-            global_array_capacity: MB_1,
-            global_array_count: 2,
-            negative_initial_value: false,
-        },
-    );
-    m
-}
-
 #[derive(Debug, Clone)]
 pub struct KernelBlockSize<'a> {
     block_name: &'a str,
-    size: u64,
+    global_array_capacity: u64,
+}
+
+#[derive(Debug)]
+pub struct BlockSizeSummary<'a> {
+    pub block_name: &'a str,
+    pub global_array_capacity: u64,
+    pub global_array_count: u64,
+    pub assigned: u64,
+}
+
+#[derive(Debug)]
+pub struct BlockMemoryExplain<'a> {
+    pub block_name: &'a str,
+    pub global_array_capacity: u64,
+    pub global_array_count: u64,
+    pub bytes: f64,
+    pub memory_reserved: f64,
 }
 
 // discarded
@@ -86,12 +85,55 @@ pub fn get_global_array_index(string_key: &str) -> u64 {
 }
 
 pub fn get_global_array_block(string_key: &str) -> &str {
-    let block_name = *string_key
-        .split("_")
-        .collect::<Vec<&str>>()
-        .first()
+    let mut v = string_key.split("_").collect::<Vec<&str>>();
+    let n = string_key.len() - v.pop().unwrap().len() - 1;
+    &string_key[0..n]
+}
+
+pub fn check_global_array_block_config(map: &BlockConfigMap) -> bool {
+    let keys: Vec<&str> = map.keys().map(|x| *x).collect();
+
+    for key in map.keys() {
+        let c = keys
+            .iter()
+            .filter(|&&x| x.contains(*key))
+            .collect::<Vec<&&str>>();
+        if c.len() > 1 {
+            return false;
+        }
+    }
+
+    true
+}
+
+pub fn explain_reserved_memory(map: &BlockConfigMap) -> (Vec<BlockMemoryExplain>, f64, u64){
+    let v: Vec<BlockMemoryExplain> = map
+        .iter()
+        .map(|(&block_name, config)| -> BlockMemoryExplain {
+            let m = (config.global_array_capacity * config.global_array_count) as f64;
+            BlockMemoryExplain {
+                block_name,
+                global_array_capacity: config.global_array_capacity as u64,
+                global_array_count: config.global_array_count as u64,
+                bytes: m,
+                memory_reserved: m / MB_1 as f64,
+            }
+        })
+        .collect();
+
+    let t = v
+        .iter()
+        .map(|x| x.memory_reserved)
+        .reduce(|acc, x| acc + x)
         .unwrap();
-    block_name
+
+    let c = v
+        .iter()
+        .map(|x| x.global_array_count)
+        .reduce(|acc, x| acc + x)
+        .unwrap();
+
+    (v, t, c)
 }
 
 impl<'a> OpenClBlock {
@@ -117,11 +159,11 @@ impl<'a> OpenClBlock {
                 .expect("Program::create_and_build_from_source failed");
         println!("{program:?}");
 
-        // discarded
-        // let mut global_array_map = HashMap::new();
-        // for (k, v) in config.iter() {
-        //     global_array_map.insert(*k, HashMap::new());
-        // }
+        if !check_global_array_block_config(&config) {
+            return Err(OpenclError::CustomOpenCl(
+                INVALID_GLOBAL_ARRAY_CONFIGURATION,
+            ));
+        }
 
         Ok(OpenClBlock {
             context,
@@ -159,7 +201,10 @@ impl<'a> OpenClBlock {
         let global_array_index = get_global_array_index(global_array_key);
 
         if global_array_index > (block_config.global_array_count - 1) as u64 {
-            println!("global_array_index not valid, {global_array_index}, {}", buf.len());
+            println!(
+                "global_array_index not valid, {global_array_index}, {}",
+                buf.len()
+            );
             return Err(OpenclError::CustomOpenCl(INVALID_GLOBAL_ARRAY_ID));
         }
 
@@ -326,23 +371,24 @@ impl<'a> OpenClBlock {
                         }
                         None
                     })
-                    .collect::<Vec<u64>>().len();
+                    .collect::<Vec<u64>>()
+                    .len();
 
                 if assigned >= config.global_array_count {
-                    return None
+                    return None;
                 }
 
                 Some(KernelBlockSize {
                     block_name,
-                    size: config.global_array_capacity as u64,
+                    global_array_capacity: config.global_array_capacity as u64,
                 })
             })
             .collect();
-        v.sort_by(|a, b| a.size.cmp(&b.size));
+        v.sort_by(|a, b| a.global_array_capacity.cmp(&b.global_array_capacity));
 
         let block_size = v
             .iter()
-            .find(|x| x.size >= len as u64)
+            .find(|x| x.global_array_capacity >= len as u64)
             .ok_or(OpenclError::CustomOpenCl(INVALID_BUFFER_LEN))?;
 
         // return block configuration
@@ -407,6 +453,35 @@ impl<'a> OpenClBlock {
 
     pub fn get_global_array_map(&self) -> &GlobalArrayMap {
         &self.global_array_map
+    }
+
+    pub fn get_global_array_summary(&self) -> Vec<BlockSizeSummary> {
+        let v: Vec<BlockSizeSummary> = self
+            .config
+            .iter()
+            .map(|(&block_name, config)| -> BlockSizeSummary {
+                // check assigned index
+                let assigned = self
+                    .global_array_map
+                    .iter()
+                    .filter_map(|(index_key, _)| -> Option<u64> {
+                        if index_key.contains(block_name) {
+                            return Some(get_global_array_index(index_key));
+                        }
+                        None
+                    })
+                    .collect::<Vec<u64>>()
+                    .len() as u64;
+
+                BlockSizeSummary {
+                    block_name,
+                    global_array_capacity: config.global_array_capacity as u64,
+                    global_array_count: config.global_array_count as u64,
+                    assigned,
+                }
+            })
+            .collect();
+        v
     }
 
     #[cfg(test)]
@@ -522,9 +597,159 @@ pub fn gen_vector_program_source(block_config: &BlockConfigMap) -> String {
     )
 }
 
+pub fn default_config() -> BlockConfigMap {
+    let mut m = HashMap::new();
+    m.insert(
+        KB_1_S,
+        GlobalArrayBlockConfig {
+            global_array_capacity: KB_1,
+            global_array_count: 2400,
+            negative_initial_value: false,
+        },
+    );
+    m.insert(
+        "2kb",
+        GlobalArrayBlockConfig {
+            global_array_capacity: KB_1 * 2,
+            global_array_count: 1200,
+            negative_initial_value: false,
+        },
+    );
+    m.insert(
+        "4kb",
+        GlobalArrayBlockConfig {
+            global_array_capacity: KB_1 * 4,
+            global_array_count: 600,
+            negative_initial_value: false,
+        },
+    );
+    m.insert(
+        "6kb",
+        GlobalArrayBlockConfig {
+            global_array_capacity: KB_1 * 6,
+            global_array_count: 200,
+            negative_initial_value: false,
+        },
+    );
+    m.insert(
+        "8kb",
+        GlobalArrayBlockConfig {
+            global_array_capacity: KB_1 * 8,
+            global_array_count: 200,
+            negative_initial_value: false,
+        },
+    );
+    m.insert(
+        "128_kb",
+        GlobalArrayBlockConfig {
+            global_array_capacity: KB_1 * 128,
+            global_array_count: 500,
+            negative_initial_value: false,
+        },
+    );
+    m.insert(
+        "512_kb",
+        GlobalArrayBlockConfig {
+            global_array_capacity: KB_1 * 512,
+            global_array_count: 200,
+            negative_initial_value: false,
+        },
+    );
+    m.insert(
+        MB_1_S,
+        GlobalArrayBlockConfig {
+            global_array_capacity: MB_1,
+            global_array_count: 10,
+            negative_initial_value: false,
+        },
+    );
+    m.insert(
+        "2mb",
+        GlobalArrayBlockConfig {
+            global_array_capacity: MB_1 * 2,
+            global_array_count: 10,
+            negative_initial_value: false,
+        },
+    );
+    m.insert(
+        "9mb",
+        GlobalArrayBlockConfig {
+            global_array_capacity: MB_1 * 9,
+            global_array_count: 10,
+            negative_initial_value: false,
+        },
+    );
+    m
+}
+
 #[cfg(test)]
 mod tests {
+    use std::thread;
+    use std::time::Duration;
     use super::*;
+
+    #[test]
+    fn check_default_config() {
+        let c = default_config();
+        let result = check_global_array_block_config(&c);
+        assert_eq!(result, true);
+    }
+
+    #[test]
+    fn check_config_1() {
+        let mut m: BlockConfigMap = HashMap::new();
+        m.insert(
+            "1kb",
+            GlobalArrayBlockConfig {
+                global_array_capacity: KB_1,
+                global_array_count: 3,
+                negative_initial_value: false,
+            },
+        );
+        m.insert(
+            "1mb",
+            GlobalArrayBlockConfig {
+                global_array_capacity: MB_1,
+                global_array_count: 2,
+                negative_initial_value: false,
+            },
+        );
+
+        let result = check_global_array_block_config(&m);
+        assert_eq!(result, true);
+    }
+
+    #[test]
+    fn check_config_2() {
+        let mut m: BlockConfigMap = HashMap::new();
+        m.insert(
+            "8kb",
+            GlobalArrayBlockConfig {
+                global_array_capacity: KB_1,
+                global_array_count: 3,
+                negative_initial_value: false,
+            },
+        );
+        m.insert(
+            "128kb",
+            GlobalArrayBlockConfig {
+                global_array_capacity: MB_1,
+                global_array_count: 2,
+                negative_initial_value: false,
+            },
+        );
+
+        let result = check_global_array_block_config(&m);
+        assert_eq!(result, false);
+    }
+
+    #[test]
+    fn generate_default_program_source() {
+        let c = default_config();
+        let result = gen_vector_program_source(&c);
+        println!("{result}");
+        assert_ne!(result.len(), 0);
+    }
 
     #[test]
     fn generate_program_source() {
@@ -552,8 +777,24 @@ mod tests {
     }
 
     #[test]
-    fn get_block_name() {
-        let c = default_config();
+    fn get_block_name_by_len() {
+        let mut c: BlockConfigMap = HashMap::new();
+        c.insert(
+            "1kb",
+            GlobalArrayBlockConfig {
+                global_array_capacity: KB_1,
+                global_array_count: 3,
+                negative_initial_value: false,
+            },
+        );
+        c.insert(
+            "1mb",
+            GlobalArrayBlockConfig {
+                global_array_capacity: MB_1,
+                global_array_count: 2,
+                negative_initial_value: false,
+            },
+        );
         let ocl_block = OpenClBlock::new(c).unwrap();
 
         let o1 = ocl_block.get_block_config_by_len(KB_1).ok().unwrap();
@@ -751,5 +992,167 @@ mod tests {
         assert_eq!(r4, "512b_0");
         assert_eq!(r5, true);
         assert_eq!(ocl_block.get_global_array_map().len(), 3);
+    }
+
+    // FIXME test value assignation
+    #[test]
+    fn get_global_array_block_1() {
+        let block_name_a = "1kb";
+        let block_name_b = "128_kb";
+        let block_name_c = "1_k_b";
+        let block_name_d = "100_000_000_kb";
+
+        let r = get_global_array_block("1kb_0");
+        let r2 = get_global_array_block("128_kb_0");
+        let r3 = get_global_array_block("1_k_b_0");
+        let r4 = get_global_array_block("100_000_000_kb_0");
+
+        assert_eq!(r, block_name_a);
+        assert_eq!(r2, block_name_b);
+        assert_eq!(r3, block_name_c);
+        assert_eq!(r4, block_name_d);
+    }
+
+    #[test]
+    fn explain_reserved_memory_1() {
+        let config = default_config();
+        let (v, t, c) = explain_reserved_memory(&config);
+        println!("{v:#?}");
+        println!("{t} mb, blocks: {c}");
+        let o = OpenClBlock::new(config).unwrap();
+        o.initialize_kernel();
+        println!("wait");
+        thread::sleep(Duration::from_millis(2000));
+        // assert_eq!(v.len(), c.len());
+    }
+
+    #[test]
+    fn explain_reserved_memory_2() {
+        let mut config: BlockConfigMap = HashMap::new();
+        config.insert(
+            "1mb",
+            GlobalArrayBlockConfig {
+                global_array_capacity: MB_1,
+                global_array_count: 512 + 64 + 64,
+                negative_initial_value: false,
+            },
+        );
+        let (v, t, c) = explain_reserved_memory(&config);
+        println!("{v:#?}");
+        println!("{t} mb, blocks: {c}");
+        let o = OpenClBlock::new(config).unwrap();
+        o.initialize_kernel();
+        println!("wait");
+        thread::sleep(Duration::from_millis(2000));
+        // assert_eq!(v.len(), c.len());
+    }
+
+    #[test]
+    fn explain_reserved_memory_3() {
+        let mut config: BlockConfigMap = HashMap::new();
+        config.insert(
+            "1kb",
+            GlobalArrayBlockConfig {
+                global_array_capacity: KB_1,
+                global_array_count: 3000,
+                negative_initial_value: false,
+            },
+        );
+        config.insert(
+            "2kb",
+            GlobalArrayBlockConfig {
+                global_array_capacity: KB_1 * 2,
+                global_array_count: 800,
+                negative_initial_value: false,
+            },
+        );
+        config.insert(
+            "4kb",
+            GlobalArrayBlockConfig {
+                global_array_capacity: KB_1 * 4,
+                global_array_count: 500,
+                negative_initial_value: false,
+            },
+        );
+        config.insert(
+            "8kb",
+            GlobalArrayBlockConfig {
+                global_array_capacity: KB_1 * 4,
+                global_array_count: 500,
+                negative_initial_value: false,
+            },
+        );
+        config.insert(
+            "128_kb",
+            GlobalArrayBlockConfig {
+                global_array_capacity: KB_1 * 4,
+                global_array_count: 500,
+                negative_initial_value: false,
+            },
+        );
+        config.insert(
+            "256_kb",
+            GlobalArrayBlockConfig {
+                global_array_capacity: KB_1 * 256,
+                global_array_count: 500,
+                negative_initial_value: false,
+            },
+        );
+        config.insert(
+            "512_kb",
+            GlobalArrayBlockConfig {
+                global_array_capacity: KB_1 * 512,
+                global_array_count: 500,
+                negative_initial_value: false,
+            },
+        );
+        config.insert(
+            "1mb",
+            GlobalArrayBlockConfig {
+                global_array_capacity: MB_1,
+                global_array_count: 16,
+                negative_initial_value: false,
+            },
+        );
+        config.insert(
+            "2mb",
+            GlobalArrayBlockConfig {
+                global_array_capacity: MB_1 * 2,
+                global_array_count: 16,
+                negative_initial_value: false,
+            },
+        );
+        config.insert(
+            "4mb",
+            GlobalArrayBlockConfig {
+                global_array_capacity: MB_1 * 4,
+                global_array_count: 16,
+                negative_initial_value: false,
+            },
+        );
+        config.insert(
+            "8mb",
+            GlobalArrayBlockConfig {
+                global_array_capacity: MB_1 * 8,
+                global_array_count: 16,
+                negative_initial_value: false,
+            },
+        );
+        config.insert(
+            "12_mb",
+            GlobalArrayBlockConfig {
+                global_array_capacity: MB_1 * 12,
+                global_array_count: 12,
+                negative_initial_value: false,
+            },
+        );
+        let (v, t, c) = explain_reserved_memory(&config);
+        println!("{v:#?}");
+        println!("{t} mb, blocks: {c}");
+        let o = OpenClBlock::new(config).unwrap();
+        o.initialize_kernel();
+        println!("wait");
+        thread::sleep(Duration::from_millis(2000));
+        // assert_eq!(v.len(), c.len());
     }
 }
