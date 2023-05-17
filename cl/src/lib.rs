@@ -28,15 +28,19 @@ pub mod ocl_v3;
 pub mod ocl_v4;
 pub mod ocl_v5;
 pub mod ocl_v6;
+pub mod ocl_v7;
 
 pub mod ocl_fs;
 pub mod ocl_fs_2;
+pub mod ocl_fs_3;
 
 pub mod ocl_fs_config;
 
 pub mod process;
 pub mod server;
 pub mod utils;
+
+pub mod global_vec;
 
 // re-export
 pub mod open_cl3 {

@@ -1,38 +1,48 @@
 use crate::error::OpenClResult;
-use crate::ocl_fs_config::config_b;
-use crate::ocl_v6::{BlockConfigMap, OpenClBlock};
+use crate::ocl_v7::{default_memory_block, explain_memory_block_config, MemoryBlock, OpenClBlock};
 use io::Error as IoError;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::io;
 use std::io::{Read, Write};
 use std::path::Path;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 lazy_static! {
-    static ref GLOBAL_OCL_FS: Mutex<OclFs> = Mutex::new(OclFs::new(config_b()));
+    static ref GLOBAL_OCL_FS: Mutex<OclFs> = Mutex::new(OclFs::new());
+}
+
+lazy_static! {
+    static ref GLOBAL_MEMORY_BLOCK: Mutex<MemoryBlock> = Mutex::new(default_memory_block());
+}
+
+lazy_static! {
+    static ref GLOBAL_OPENCL_BLOCK: Arc<OpenClBlock> =
+        Arc::new(OpenClBlock::new(default_memory_block()).expect("OpenClBlock::new()"));
 }
 
 pub fn ocl_initialize() {
-    let ocl_fs = GLOBAL_OCL_FS.lock().unwrap();
-    ocl_fs.ocl_block.initialize_kernel();
+    let ocl_block = GLOBAL_OPENCL_BLOCK.clone();
+    ocl_block.initialize_kernel();
 }
 
 pub fn ocl_cache() -> OpenClResult<()> {
     let ocl_fs = GLOBAL_OCL_FS.lock().unwrap();
-    println!("{:#?}", ocl_fs.cache);
-    println!("{:#?}", ocl_fs.ocl_block.get_global_array_map());
+    let memory_block = GLOBAL_MEMORY_BLOCK.lock().unwrap();
+    // println!("{:#?}", ocl_fs.cache);
+    // println!("{:#?}", memory_block.memory_map());
     println!("path total {}", ocl_fs.cache.len());
-    println!(
-        "index total {}",
-        ocl_fs.ocl_block.get_global_array_map().len()
-    );
+    println!("index total {}", memory_block.memory_map().len());
+
+    let (v, t, c) = explain_memory_block_config(memory_block.config_map());
+    println!("{v:#?}");
+    println!("{t} mb, blocks: {c}");
     Ok(())
 }
 
 pub fn ocl_summary() -> OpenClResult<()> {
-    let ocl_fs = GLOBAL_OCL_FS.lock().unwrap();
-    let v = ocl_fs.ocl_block.get_global_array_summary();
+    let memory_block = GLOBAL_MEMORY_BLOCK.lock().unwrap();
+    let v = memory_block.summary();
     println!("{:#?}", v);
 
     let t = v.iter().map(|x| x.assigned).collect::<Vec<u64>>();
@@ -50,14 +60,12 @@ pub type FileCacheMap = HashMap<String, String>;
 
 #[derive(Debug)]
 struct OclFs {
-    pub ocl_block: OpenClBlock,
     pub cache: FileCacheMap,
 }
 
 impl OclFs {
-    pub fn new(config: BlockConfigMap) -> Self {
+    pub fn new() -> Self {
         Self {
-            ocl_block: OpenClBlock::new(config).expect("OpenClBlock::new()"),
             cache: HashMap::new(),
         }
     }
@@ -91,22 +99,21 @@ pub fn write<P: AsRef<Path>, C: AsRef<[u8]>>(path: P, contents: C) -> io::Result
 
 #[derive(Debug, Clone)]
 pub struct OclFile {
-    global_array_key: String,
+    key: String,
 }
 
 impl OclFile {
     pub fn open<P: AsRef<Path>>(path: P) -> io::Result<OclFile> {
-        let ocl_fs = GLOBAL_OCL_FS.lock().unwrap();
-
         // TODO open flags
         let path_b = path.as_ref().as_os_str().to_string_lossy();
 
+        let ocl_fs = GLOBAL_OCL_FS.lock().unwrap();
+
         match ocl_fs.cache.get(path_b.as_ref()) {
             Some(v) => {
-                if ocl_fs.ocl_block.get_global_array_map().get(v).is_some() {
-                    return Ok(OclFile {
-                        global_array_key: v.clone(),
-                    });
+                let memory_block = GLOBAL_MEMORY_BLOCK.lock().unwrap();
+                if memory_block.memory_map().get(v).is_some() {
+                    return Ok(OclFile { key: v.clone() });
                 }
             }
             None => {
@@ -124,35 +131,36 @@ impl OclFile {
     }
 
     pub fn create_with_len<P: AsRef<Path>>(path: P, len: usize) -> io::Result<OclFile> {
-        let mut ocl_fs = GLOBAL_OCL_FS.lock().unwrap();
-        let k = ocl_fs.ocl_block.assign_global_array_key(len)?;
         let path_b = path.as_ref().as_os_str().to_string_lossy();
 
-        ocl_fs.cache.insert(path_b.into(), k.clone());
+        let mut memory_block = GLOBAL_MEMORY_BLOCK.lock().unwrap();
+        let key = memory_block.set_key_by_len(len)?;
 
-        Ok(OclFile {
-            global_array_key: k,
-        })
+        let mut ocl_fs = GLOBAL_OCL_FS.lock().unwrap();
+        ocl_fs.cache.insert(path_b.into(), key.clone());
+
+        Ok(OclFile { key })
     }
 
-    pub fn global_array_key(&self) -> &String {
-        &self.global_array_key
+    pub fn key(&self) -> &String {
+        &self.key
     }
 
     fn read_to_vec(&self) -> io::Result<Vec<u8>> {
-        let ocl_fs = GLOBAL_OCL_FS.lock().unwrap();
-        let v = ocl_fs.ocl_block.dequeue_buffer(&self.global_array_key)?;
+        let ocl_block = GLOBAL_OPENCL_BLOCK.clone();
+        let v = ocl_block.dequeue_buffer(&self.key)?;
         Ok(v)
     }
 }
 
 impl Write for OclFile {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        let mut ocl_fs = GLOBAL_OCL_FS.lock().unwrap();
-        ocl_fs
-            .ocl_block
-            .enqueue_buffer(buf, &self.global_array_key)?;
-        Ok(buf.len())
+        let ocl_block = GLOBAL_OPENCL_BLOCK.clone();
+        let r = ocl_block.enqueue_buffer(buf, &self.key)?;
+        if r >= buf.len() {
+            return Ok(buf.len());
+        }
+        Ok(0)
     }
 
     fn flush(&mut self) -> io::Result<()> {
@@ -162,8 +170,8 @@ impl Write for OclFile {
 
 impl Read for OclFile {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        let ocl_fs = GLOBAL_OCL_FS.lock().unwrap();
-        let v = ocl_fs.ocl_block.dequeue_buffer(&self.global_array_key)?;
+        let ocl_block = GLOBAL_OPENCL_BLOCK.clone();
+        let v = ocl_block.dequeue_buffer(&self.key)?;
 
         // FIXME Unsafe buffer update
         if buf.len() > v.len() {

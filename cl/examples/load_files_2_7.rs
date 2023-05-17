@@ -1,5 +1,5 @@
-use cl::ocl_fs_2;
-use cl::ocl_fs_2::{ocl_cache, ocl_initialize, ocl_summary};
+use cl::ocl_fs_3;
+use cl::ocl_fs_3::{ocl_cache, ocl_initialize, ocl_summary};
 use cl::utils::load_all_from_dirs;
 use std::path::Path;
 use std::time::Duration;
@@ -9,6 +9,7 @@ fn main() {
     ocl_initialize();
 
     let path = Path::new("./cool/node_modules");
+    // let path = Path::new("../cool/node_modules");
     let mut v = vec![];
     // load_dirs(&path, &mut v).expect("visit_dirs");
     load_all_from_dirs(&path, &mut v).expect("visit_dirs");
@@ -27,9 +28,9 @@ fn main() {
 
         total_size += path_v.len() as f64;
 
-        println!("{path:?}");
+        // println!("{path:?}");
 
-        match ocl_fs_2::write(path.as_path(), path_v.as_slice()) {
+        match ocl_fs_3::write(path.as_path(), path_v.as_slice()) {
             Ok(_) => {
                 // pass
             }
@@ -50,3 +51,14 @@ fn main() {
     println!("total mb {}", total_size / (1024 * 1024) as f64);
     println!("total {}", v.len());
 }
+
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//
+//     #[test]
+//     fn it_works() {
+//         main();
+//         assert_eq!(1, 1);
+//     }
+// }

@@ -43,7 +43,7 @@ async function findDirFiles(folderName, from) {
 }
 
 async function main() {
-  const baseFolder = 'tmp/node_modules';
+  const baseFolder = 'tmp/ts_express_node_modules';
   const p = path.resolve(__dirname, baseFolder);
   console.log('base folder: ', p);
   // const salesFiles = await findDirFiles(path.join(__dirname, "tmp"));
