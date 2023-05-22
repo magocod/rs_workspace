@@ -49,6 +49,16 @@ mod tests {
     }
 
     #[test]
+    fn sync_2() {
+        add_global_vec(1, 1);
+        let v = get_global_vec(0, 1);
+        let copy = copy_global_vec(1);
+        add_global_vec(v + 1, 1);
+        println!("{:?}", copy);
+        print_global_vec(1);
+    }
+
+    #[test]
     fn multi_thread() {
         let total_threads = 10;
         add_global_vec(1, 1);
