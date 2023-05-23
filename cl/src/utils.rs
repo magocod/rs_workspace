@@ -13,8 +13,8 @@ pub fn load_dirs(dir: &Path, vec: &mut Vec<DirEntry>) -> io::Result<()> {
                 // let size = entry.metadata().unwrap().len() as f64;
                 // let size_mb = size / (1024 * 1024) as f64;
                 // //
-                let path = entry.path();
-                let path_str = path.to_str().unwrap();
+                // let path = entry.path();
+                // let path_str = path.to_str().unwrap();
 
                 // println!("{}", path_str);
                 // println!("size {size} bytes -> {} mb", size_mb);
@@ -78,8 +78,8 @@ pub fn load_dirs_string(dir: &Path, vec: &mut Vec<String>) -> io::Result<()> {
                 // let size = entry.metadata().unwrap().len() as f64;
                 // let size_mb = size / (1024 * 1024) as f64;
                 // //
-                let path = entry.path();
-                let path_str = path.to_str().unwrap();
+                // let path = entry.path();
+                // let path_str = path.to_str().unwrap();
 
                 // println!("{}", path_str);
                 // println!("size {size} bytes -> {} mb", size_mb);
