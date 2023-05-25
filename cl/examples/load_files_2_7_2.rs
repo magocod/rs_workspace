@@ -1,10 +1,10 @@
 use cl::ocl_fs_3;
 use cl::ocl_fs_3::{ocl_cache, ocl_initialize, ocl_summary};
-use cl::utils::{load_all_from_dirs_string};
+use cl::utils::load_all_from_dirs_string;
 use std::path::Path;
+use std::sync::Arc;
 use std::time::Duration;
 use std::{fs, thread};
-use std::sync::Arc;
 
 const TOTAL_THREADS: usize = 7;
 
@@ -28,7 +28,10 @@ fn main() {
         total_threads += 1;
     }
 
-    let c = v.chunks(total_per_thread).map(|x| x.to_vec()).collect::<Vec<Vec<String>>>();
+    let c = v
+        .chunks(total_per_thread)
+        .map(|x| x.to_vec())
+        .collect::<Vec<Vec<String>>>();
     let vec_of_vecs = Arc::new(c);
     println!("chunks {}", vec_of_vecs.len());
 

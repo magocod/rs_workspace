@@ -53,11 +53,9 @@ fn main() -> Result<()> {
             .expect("CommandQueue::create_default failed");
     println!("{queue:?}");
 
-
     let c_mem_obj = unsafe {
         Buffer::<cl_int>::create(&context, CL_MEM_WRITE_ONLY, LIST_SIZE, ptr::null_mut())?
     };
-
 
     let program = Program::create_and_build_from_source(&context, PROGRAM_SOURCE, "")
         .expect("Program::create_and_build_from_source failed");

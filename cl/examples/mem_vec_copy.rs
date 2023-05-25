@@ -6,7 +6,7 @@ use opencl3::context::Context;
 use opencl3::device::{Device, CL_DEVICE_TYPE_GPU};
 use opencl3::kernel::{ExecuteKernel, Kernel};
 use opencl3::memory::{Buffer, CL_MEM_READ_ONLY, CL_MEM_WRITE_ONLY};
-use opencl3::program::{CL_STD_2_0, Program};
+use opencl3::program::{Program, CL_STD_2_0};
 use opencl3::types::{cl_event, cl_int, CL_BLOCKING};
 use opencl3::Result;
 use std::ptr;

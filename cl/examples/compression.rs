@@ -1,6 +1,6 @@
-use std::io::prelude::*;
-use flate2::Compression;
 use flate2::write::{GzEncoder, ZlibEncoder};
+use flate2::Compression;
+use std::io::prelude::*;
 
 fn main() {
     // Vec<u8> implements Write, assigning the compressed bytes of sample string
