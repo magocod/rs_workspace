@@ -10,7 +10,7 @@ fn visit_dirs(dir: &Path) -> io::Result<()> {
             let path = entry.path();
             if path.is_dir() {
                 println!("{entry:?}");
-                visit_dirs(&path)?;
+                // visit_dirs(&path)?;
             } else {
                 println!("{entry:?}");
             }
@@ -21,7 +21,7 @@ fn visit_dirs(dir: &Path) -> io::Result<()> {
 
 fn main() {
     let e = env::current_dir().unwrap();
-    let p = e.as_path().join("tmp").join("directory");
+    let p = e.as_path().join("tmp");
 
     println!("e {:?}", e);
     println!("p {:?}", p);
