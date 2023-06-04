@@ -29,6 +29,9 @@ fn main() {
 
 
     for v in Path::new("/tmp/foo/bar.txt").iter() {
-        println!("{v:?}, v")
+        println!("{v:?}, v");
     }
+
+    let p = Path::new("/tmp/foo/bar.txt");
+    println!("path {p:?} -> parent {:?}", p.parent());
 }
